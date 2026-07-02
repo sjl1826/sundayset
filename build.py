@@ -104,16 +104,3 @@ def main():
             " window.DEFAULT_DATE = " + json.dumps(iso) + ";</script>\n</head>"
         )
         # The date picker (in the page script) reads window.PROJECT_SETS / window.DEFAULT_DATE.
-        html = html.replace("</head>", head_inject, 1)
-
-    with open(OUT_HTML, "w", encoding="utf-8") as f:
-        f.write(html)
-
-    print(f"Wrote {os.path.relpath(OUT_HTML, HERE)}")
-    print(f"Wrote {len([n for n in rel_by_name.values() if n])} images to images/")
-    if not backup:
-        print("Note: built with placeholder song text. Re-run with your backup JSON to bake in your content.")
-
-
-if __name__ == "__main__":
-    main()
