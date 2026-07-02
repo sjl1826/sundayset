@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sunday Worship Set</title>
+<style>
+  :root {
+    --bg: #f6f9fc;
+    --panel: #ffffff;
+    --ink: #0a1b2a;
+    --muted: #5b7186;
+    --line: #e6ecf2;
+    --accent: #4da2ff;
+    --accent-dark: #011829;
+    --accent-soft: #eaf4ff;
+    --radius: 20px;
+    --shadow: 0 1px 2px rgba(10,27,42,.04), 0 12px 40px rgba(10,27,42,.06);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 50% -200px, #eaf4ff 0%, rgba(234,244,255,0) 60%),
+      var(--bg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid #d5e9ff;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 22px;
+  }
+  h1.band-name {
+    font-size: clamp(40px, 8vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    margin: 0 0 12px;
+    background: linear-gradient(180deg, #0a1b2a 0%, #2a4a68 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .date {
+    font-size: 18px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  [contenteditable]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  /* ---------- Section titles ---------- */
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 20px;
+  }
+
+  /* ---------- Members ---------- */
+  .members {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 64px;
+  }
+  .member {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 16px 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .photo {
+    width: 92px;
+    height: 92px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: linear-gradient(160deg, #eaf4ff, #d5e9ff);
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #d5e9ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .photo .hint { padding: 0 8px; }
+  .member .name {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  .member .role {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+  }
+  .member .role .icon { font-size: 15px; }
+
+  /* ---------- Table of contents ---------- */
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 64px;
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: toc;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 6px 24px;
+  }
+  .toc li { counter-increment: toc; }
+  .toc a {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink);
+    padding: 10px 8px;
+    border-radius: 10px;
+    border-bottom: 1px solid var(--line);
+    transition: background .15s;
+  }
+  .toc a:hover { background: var(--accent-soft); }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 13px;
+    min-width: 24px;
+  }
+  .toc .toc-key {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ---------- Songs ---------- */
+  .songs { display: grid; gap: 24px; }
+  .song {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    scroll-margin-top: 24px;
+  }
+  .song-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 26px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .song-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid #d5e9ff;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .song-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+  a.song-title:hover { border-bottom-color: var(--accent); color: var(--accent); }
+  .song-title-link { display: inline-flex; align-items: center; gap: 8px; }
+  .link-btn {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    border-radius: 8px;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .link-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .song-meta {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    background: #f2f6fa;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+  .chip .label {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 11px;
+  }
+  .chip .val { min-width: 20px; }
+
+  .chords-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 18px 26px 0;
+  }
+  .chords {
+    font-family: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    padding: 12px 26px 26px;
+    color: #142a3d;
+    min-height: 90px;
+  }
+  .chords:empty::before {
+    content: "Paste your chords / lyrics here…";
+    color: #a9b8c6;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 50;
+  }
+
+  /* ---------- Date picker ---------- */
+  .datebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .datebar label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .datebar select {
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  .datebar select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn {
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    transition: transform .12s, background .15s;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn.primary {
+    background: var(--accent-dark);
+    color: #fff;
+    border-color: var(--accent-dark);
+  }
+  .btn.primary:hover { background: #0a2740; }
+
+  .footnote {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 56px;
+  }
+
+  /* ---------- Print / PDF ---------- */
+  /* ---------- Auto-scroll controller ---------- */
+  .scroller {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 10px 12px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .scroller .grip {
+    cursor: grab;
+    color: #b9c6d3;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  .scroller.dragging .grip { cursor: grabbing; }
+  .scroller .play {
+    border: none;
+    background: var(--accent-dark);
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 15px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scroller .play.on { background: var(--accent); }
+  .scroller .speed-wrap { display: flex; flex-direction: column; align-items: center; }
+  .scroller .speed {
+    width: 58px;
+    text-align: center;
+    font-family: var(--font);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 6px 4px;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+  .scroller .speed:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .scroller .speed::-webkit-outer-spin-button,
+  .scroller .speed::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .scroller .lbl {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ---------- Profile modal ---------- */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10, 27, 42, .45);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .modal.open { display: flex; }
+  .modal-card {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(10, 27, 42, .25);
+    padding: 44px 48px 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  .modal-photo {
+    width: 240px;
+    height: 240px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--accent-soft);
+    border: 1px solid #d5e9ff;
+  }
+  .modal-name {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .modal-role {
+    margin-top: 8px;
+    font-size: 17px;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-role .icon { font-size: 19px; }
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--muted);
+  }
+  .modal-close:hover { color: var(--ink); }
+
+  @media print {
+    :root { --shadow: none; }
+    /* Force photos and colored chips to actually print (no "Background graphics" checkbox needed) */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff; }
+    .toolbar { display: none !important; }
+    .datebar { display: none !important; }
+    .scroller { display: none !important; }
+    .modal { display: none !important; }
+    .wrap { padding: 0; max-width: 100%; }
+    .photo .hint { display: none; }
+    .member, .toc, .song { break-inside: avoid; box-shadow: none; }
+    .song { break-inside: avoid-page; }
+    a { color: inherit; text-decoration: none; }
+    .link-btn { display: none !important; }
+    [contenteditable]:focus { outline: none; }
+  }
+</style>
+<script>window.PROJECT_SETS = {"2026-07-05": {"text": {"eyebrow": "Setlist", "band-name": "Sunday Set List", "date": "Sunday \u00b7 July 5, 2026", "song-title-1": "Jesus You're Beautiful", "song-key-1": "C", "song-singer-1": "Abraham", "song-chords-1": "[Verse]\nC                     F\nSpirit of wisdom, open my eyes again\nC                         F\nSpirit of revelation, open my heart again\n\n\n[Pre-Chorus]\n        C  G       F\n'Cause I want to see You\n        C  G      F\nLord, I want to see You\n          G          C\nSee You rightly, Jesus\n\n\n[Chorus]\n   C\nI know that Your eyes are like flames of fire\n   G\nI know that Your head is white as wool\n    F                    C\nI know that Your voice, it sounds like waters\nDm             C\nJesus, You're beautiful\n\n\n[Chorus 2]\nCsus4 C  G       Csus4 C\nThere is none like you   Lord\nG                 C\nJesus, you're beautiful\n\n\n[Bridge]\nC                             G\nThere is no one like You in the heavens or on the earth\nF                         C       Dm\nThere is no one like You in the heavens or on the earth", "song-title-2": "Jesus Lover of my Soul", "song-key-2": "C", "song-singer-2": "Sam", "song-chords-2": "C       G           Gsus G\nJesus, lover of my soul\nAm            F           G\nJesus, I will never let You go\n\nC               G             Gsus G\nYou've taken me from the miry clay\nAm (build sound)     F (break)      G (break)\nSet my feet upon the rock and now I know\nC           G Gsus G\nI love You, I need You\n\nAm                            F              G\nThough my world may fall, I'll never let You go\nC        G     Gsus     G\nMy Savior, my closest friend\nAm                    F              G\nI will worship You until the very end", "song-title-3": "Nothing is Impossible", "song-key-3": "C", "song-singer-3": "Sam", "song-chords-3": "[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\nF   C   Dm   F\n\n\n[Verse]\n\nC              Dm              F\nI'm not gonna live by what I see,\nAm            G               F\nI'm not gonna live by what I feel\n\n\n[Pre-Chorus]\n\nAm        G                F\nDeep down I, know that You're here with me\nAm        G          Dm    F\nI know that, You can do anything\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You", "song-title-4": "Above Every other Name", "song-key-4": "C", "song-singer-4": "Ana", "song-chords-4": "[Verse]\n\nC            G                     Am\n O Lord, my strength, You're my Redeemer\n   F\nForever I will love You\n\n\n[Pre-Chorus]\n\n C                    G/C\nNo one whose hope is in the Lord will ever be put to shame (E - B - C#m - A (Last time through))\nF/C                     C\n You are the Rock that is higher than I\n\n\n[Chorus]\n\n     C                 G\nYour name is above every other name\n    Am                  F\nYour name is above every other name\n\n\n[Bridge]\n\n     C           G\nHallelujah, hallelujah\n    Am          F\nHallelujah, hallelujah\n\n\n[Tag]\n\n C\nGod transcendent (beautiful, beautiful, beautiful)\n        C\nThere's no one like You (beautiful, beautiful, beautiful)", "song-title-5": "Center", "song-key-5": "A", "song-singer-5": "Ana", "song-chords-5": "[Verse 1]\nA\n Maybe we've made this complicated\nD\nMore than it was ever meant to be\nF#m\n   Hasn't it always been about the same thing\nD\nLord, bring us back to simple things\n\n\n[Chorus]\nD           F#m    A    E                          D\nYou, be the center of it all my heart belongs to You\n    F#m    A     E                             C#m\nMy Savior all in all You're the one I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Verse 2]\nA\n Teach us to discern the moment\n         D\nWhen to serve and when to sit here at Your feet\nF#m\n   Keep us awake to what's important\n          D\nJust like Mary chose the better thing\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Tag]\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                     C#m\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                     C#m\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 E/G#\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 A\nEverything for the honor of Your Name\n\n\n[Tag]\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n\n\n[Chorus]\n     D           F#m    A    E                          D\nFor You, are the center of it all my heart belongs to You\n    F#m    A     E                                C#m\nMy Savior all in all You're the One I hold on to\n                        F#m       E\nFor the beauty of Your Name my soul will live to say\n          E\nJesus, I love You\n\n\n[Outro]\n          A/C#    D           E\nMy soul will live to say Jesus, I love You\n          A/C#    D             E        D\nMy soul will live to say Jesus, I love You", "song-title-6": "You Deserve the Glory", "song-key-6": "A", "song-singer-6": "P. Joanne", "song-chords-6": "[Verse 1]\n\n              A\nYou deserve the glory\n       C#m   F#m\nAnd the honour\n        Bm\nLord, we lift our hands in worship\n      E\nAs we lift your Holy name\n\n(repeat)\n\n\n[Chorus]\n\n     A\nFor you are great\n       C#7          F#m\nYou do miracle so great\n        C#m             Bm\nThere is no one else like you\n       DM7  C#m Bm  E    A\nThere is no one else like you", "song-title-7": "No one like the Lord", "song-key-7": "A", "song-singer-7": "Sam", "song-chords-7": "[Verse 1]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n(Hey)\n\n\n[Verse 2]\nF#m                    D\n   There is One on the throne\n    A      C#m7\nJesus, holy\n(You are, You are)\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n\n\n[Chorus]\n(So we sing)\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n(Yeah)\n\n\n[Verse 3]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n          A          E\nAll the honor and glory\n(You are, You are)\n\n\n[Chorus]\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n              F#m    E/G#      A\nWoah, and the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                E                F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh and we cry)\nF#m    E/G#   A\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E              F#m\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                    F#m\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E                 F#m\nAnd we crown You Lord of all\n\n                    Bm\nWe crown You, You are worthy\n                    F#m/A\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\n        D         E           F#m\nAll of the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                              F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh, You are)\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n                D      E         F#m\nAnd all of the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                B\n'Cause there's no one like the Lord\n\n\n[Interlude]\nD\nThere's no one like you\nB\nThere's just no one like you\n      D\nYeah\n(There's no one like the Lord)\n                          B\nThere's no one like the Lord\n(There's no one like the Lord)\n                          D\nSo wonderful in all His ways\n(There's no one like the Lord)\n                          B\nSo beautiful in all His ways\n(There's no one like the Lord)\n            D\nSo majestic\n(There's no one like the Lord)\n                        B\nOh the King above all Kings\n(There's no one like the Lord)\n        D\nYeah\n(There's no one like the Lord)\n                            B\nOh the angels around your throne\n(There's no one like the Lord)\nEvery time they sing, they sing a new song at your feet\nD\n(There's no one like the Lord)\n                        B\nThey cry Holy, Holy, Holy\n(There's no one like the Lord)\n                        D\nThey cry worthy, worthy, worthy\n(There's no one like the Lord)\n                          B\n'cause there's no like you\n(There's no one like the Lord)\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        B\nAnd we crown You King of glory\n                        D\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                          F#m/A\nWe crown You, You are worthy\n                          B\nWe crown You, You are worthy\n                          D\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\nD         E      F#m\nAll the creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\nE2                    F#m\nThere's no one like the Lord\n        D       E2         F#m\nAnd the elders, creatures bow\n        Bm7                   D\nGiving praise to Him and Him alone\n              E2                B\n'Cause there's no one like the Lord\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\n\nD           E2                 F#m\nThere's just no one like the Lord"}, "links": {"1": "https://www.youtube.com/results?search_query=Jesus+You%27re+Beautiful+worship+chords", "2": "https://www.youtube.com/results?search_query=Jesus+Lover+of+my+Soul+worship+chords", "3": "https://www.youtube.com/results?search_query=Nothing+is+Impossible+worship+chords", "4": "https://www.youtube.com/results?search_query=Above+Every+other+Name+worship+chords", "5": "https://www.youtube.com/results?search_query=Center+worship+chords", "6": "https://www.youtube.com/results?search_query=You+Deserve+the+Glory+worship+chords", "7": "https://www.youtube.com/results?search_query=No+one+like+the+Lord+worship+chords"}, "photos": {"0": "url('images/01-joanne.jpg')", "1": "url('images/02-sam.jpg')", "2": "url('images/03-ana.jpg')", "3": "url('images/04-abraham.jpg')", "4": "url('images/05-edwin.jpg')", "5": "url('images/06-gabe.jpg')", "6": "url('images/07-andrew.jpg')"}}}; window.DEFAULT_DATE = "2026-07-05";</script>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="btn primary" onclick="window.print()">Export to PDF</button>
+</div>
+
+<div class="wrap">
+
+  <!-- SETLIST PICKER -->
+  <div class="datebar">
+    <label for="setPicker">Set list</label>
+    <select id="setPicker"></select>
+  </div>
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="eyebrow" contenteditable="true" data-save="eyebrow">Setlist</span>
+    <h1 class="band-name" contenteditable="true" data-save="band-name">Our Band Name</h1>
+    <div class="date" contenteditable="true" data-save="date">Friday · July 2, 2026</div>
+  </header>
+
+  <!-- MEMBERS -->
+  <p class="section-title">The Band</p>
+  <div class="members" id="members"></div>
+
+  <!-- TABLE OF CONTENTS -->
+  <p class="section-title">Setlist · Table of Contents</p>
+  <nav class="toc">
+    <ol id="toc"></ol>
+  </nav>
+
+  <!-- SONGS -->
+  <p class="section-title">Songs</p>
+  <div class="songs" id="songs"></div>
+
+  <p class="footnote">Click any text to edit it · Click a photo circle to add a picture · Click 🔗 to set a song link · then “Export to PDF”.</p>
+</div>
+
+<!-- Profile modal: bigger view of a band member -->
+<div class="modal" id="profileModal">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div class="modal-photo" id="modalPhoto"></div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-role" id="modalRole"></div>
+  </div>
+</div>
+
+<script>
+  /* ---------------- Data ---------------- */
+  const members = [
+    { name: "Joanne",  role: "Keyboard / Vox",        icon: "🎹" },
+    { name: "Sam",     role: "Acoustic Guitar / Vox", icon: "🎸" },
+    { name: "Ana",     role: "Vox",                   icon: "🎤" },
+    { name: "Abraham", role: "Vox",                   icon: "🎤" },
+    { name: "Edwin",   role: "Bass Guitar",           icon: "🎸" },
+    { name: "Gabe",    role: "Drums",                 icon: "🥁" },
+    { name: "Andrew",  role: "Sound",                 icon: "🎛️" },
+  ];
+
+  const PHOTOS = {"Joanne": "images/01-joanne.jpg", "Sam": "images/02-sam.jpg", "Ana": "images/03-ana.jpg", "Abraham": "images/04-abraham.jpg", "Edwin": "images/05-edwin.jpg", "Gabe": "images/06-gabe.jpg", "Andrew": "images/07-andrew.jpg"};
+
+  const SONG_COUNT = 7;
+
+  /* ---------------- Members ---------------- */
+  const membersEl = document.getElementById("members");
+  members.forEach((m, idx) => {
+    const card = document.createElement("div");
+    card.className = "member";
+    const src = PHOTOS[m.name] || "";
+    const styleAttr = src ? ` style="background-image:url('${src}')"` : "";
+    const hint = src ? "" : '<span class="hint">Add photo</span>';
+    card.innerHTML = `
+      <div class="photo" data-idx="${idx}" title="Click to view profile"${styleAttr}>${hint}</div>
+      <div class="name" contenteditable="true" data-save="m-name-${idx}">${m.name}</div>
+      <div class="role"><span class="icon">${m.icon}</span><span contenteditable="true" data-save="m-role-${idx}">${m.role}</span></div>
+    `;
+    membersEl.appendChild(card);
+  });
+
+  /* ---------------- Songs + TOC ---------------- */
+  const songsEl = document.getElementById("songs");
+  const tocEl = document.getElementById("toc");
+  const pad = (n) => String(n).padStart(2, "0");
+
+  for (let i = 1; i <= SONG_COUNT; i++) {
+    const id = "song-" + i;
+
+    // TOC entry
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <a href="#${id}">
+        <span class="toc-title" data-song="${i}">Song ${i}</span>
+        <span class="toc-key" data-key="${i}">—</span>
+      </a>`;
+    tocEl.appendChild(li);
+
+    // Song card
+    const song = document.createElement("section");
+    song.className = "song";
+    song.id = id;
+    song.innerHTML = `
+      <div class="song-head">
+        <div class="song-num">${pad(i)}</div>
+        <div class="song-title-link">
+          <a class="song-title" href="#" target="_blank" rel="noopener" data-title="${i}" data-save="song-title-${i}" contenteditable="true"
+             onclick="if(this.getAttribute('href')==='#'){return false;}">Song Title ${i}</a>
+          <button class="link-btn" title="Set link" onclick="setLink(${i})">🔗</button>
+        </div>
+        <div class="song-meta">
+          <span class="chip"><span class="label">Key</span><span class="val" contenteditable="true" data-keyval="${i}" data-save="song-key-${i}">C</span></span>
+          <span class="chip"><span class="label">Singer</span><span class="val" contenteditable="true" data-save="song-singer-${i}">Name</span></span>
+        </div>
+      </div>
+      <div class="chords-label">Chords / Lyrics</div>
+      <div class="chords" contenteditable="true" data-save="song-chords-${i}"></div>
+    `;
+    songsEl.appendChild(song);
+  }
+
+  /* ---------------- Sync TOC with song titles + key ---------------- */
+  function syncToc() {
+    for (let i = 1; i <= SONG_COUNT; i++) {
+      const title = document.querySelector(`[data-title="${i}"]`).textContent.trim();
+      const key = document.querySelector(`[data-keyval="${i}"]`).textContent.trim();
+      document.querySelector(`[data-song="${i}"]`).textContent = title || ("Song " + i);
+      document.querySelector(`[data-key="${i}"]`).textContent = key ? ("Key of " + key) : "—";
+    }
+  }
+  document.addEventListener("input", syncToc);
+  syncToc();
+
+  /* ---------------- State helpers (used by the date picker) ---------------- */
+  function collectState() {
+    const s = { text: {}, photos: {}, links: {} };
+    document.querySelectorAll("[data-save]").forEach((el) => { s.text[el.dataset.save] = el.innerHTML; });
+    document.querySelectorAll(".photo[data-idx]").forEach((el) => { s.photos[el.dataset.idx] = el.style.backgroundImage || ""; });
+    document.querySelectorAll("a.song-title[data-title]").forEach((a) => { s.links[a.dataset.title] = a.getAttribute("href"); });
+    return s;
+  }
+
+  function applyState(s) {
+    if (!s) return;
+    if (s.text) Object.entries(s.text).forEach(([k, v]) => {
+      const el = document.querySelector(`[data-save="${k}"]`);
+      if (el) el.innerHTML = v;
+    });
+    if (s.photos) Object.entries(s.photos).forEach(([k, v]) => {
+      const el = document.querySelector(`.photo[data-idx="${k}"]`);
+      if (el && v) { el.style.backgroundImage = v; const h = el.querySelector(".hint"); if (h) h.style.display = "none"; }
+    });
+    if (s.links) Object.entries(s.links).forEach(([k, v]) => {
+      const a = document.querySelector(`a.song-title[data-title="${k}"]`);
+      if (a && v) { a.setAttribute("href", v); if (v !== "#") a.title = "Opens: " + v; }
+    });
+    syncToc();
+  }
+
+  /* ---------------- Set list picker: choose a stored set to load ---------------- */
+  const SETS = window.PROJECT_SETS || {};   // { "<id>": savedState }, baked in at build time
+  const DEFAULT_STATE = collectState();     // the blank template layout to fall back to
+  const picker = document.getElementById("setPicker");
+
+  function labelForSet(set) {
+    const t = (set && set.text) || {};
+    return t["date"] || t["band-name"] || "Set list";
+  }
+
+  function loadSet(key) {
+    applyState(DEFAULT_STATE);              // reset first so nothing lingers from another set
+    if (SETS[key]) applyState(SETS[key]);
+  }
+
+  Object.keys(SETS).forEach((key) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = labelForSet(SETS[key]);
+    picker.appendChild(opt);
+  });
+  picker.addEventListener("change", () => loadSet(picker.value));
+
+  const startKey = window.DEFAULT_DATE || Object.keys(SETS)[0] || "";
+  if (startKey) { picker.value = startKey; loadSet(startKey); }
+
+  /* ---------------- Set song link ---------------- */
+  function setLink(i) {
+    const a = document.querySelector(`[data-title="${i}"]`);
+    const current = a.getAttribute("href") === "#" ? "" : a.getAttribute("href");
+    const url = prompt("Paste the link for this song (YouTube, Spotify, chart, etc.):", current);
+    if (url === null) return;
+    if (url.trim() === "") { a.setAttribute("href", "#"); return; }
+    a.setAttribute("href", url.trim());
+    a.title = "Opens: " + url.trim();
+  }
+
+  /* ---------------- Profile modal: click a photo to view it bigger ---------------- */
+  const modal = document.getElementById("profileModal");
+  const modalPhoto = document.getElementById("modalPhoto");
+  const modalName = document.getElementById("modalName");
+  const modalRole = document.getElementById("modalRole");
+
+  function openProfile(card) {
+    const photo = card.querySelector(".photo");
+    modalPhoto.style.backgroundImage = photo ? photo.style.backgroundImage : "";
+    modalName.textContent = card.querySelector(".name").textContent;
+    modalRole.innerHTML = card.querySelector(".role").innerHTML;
+    modal.classList.add("open");
+  }
+  function closeProfile() { modal.classList.remove("open"); }
+
+  document.addEventListener("click", (e) => {
+    const photo = e.target.closest(".photo");
+    if (photo) {
+      const card = photo.closest(".member");
+      if (card) openProfile(card);
+    }
+  });
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeProfile(); });
+  document.getElementById("modalClose").addEventListener("click", closeProfile);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeProfile(); });
+</script>
+
+<!-- Auto-scroll controller: draggable, stays in the corner, wheel sets speed -->
+<div class="scroller" id="scroller" title="Scroll the number to change speed · drag ⠿ to move">
+  <span class="grip" id="scrollerGrip" title="Drag to move">⠿</span>
+  <button class="play" id="scrollPlay" title="Start / stop auto-scroll" aria-label="Start or stop auto-scroll">▶</button>
+  <div class="speed-wrap">
+    <input class="speed" id="scrollSpeed" type="number" min="1" max="300" step="1" value="6"
+           title="Speed (pixels/second). 1 = super slow. Scroll your mouse wheel over this box to change it." />
+    <span class="lbl">speed</span>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const panel  = document.getElementById("scroller");
+    const grip   = document.getElementById("scrollerGrip");
+    const play   = document.getElementById("scrollPlay");
+    const speed  = document.getElementById("scrollSpeed");
+
+    const MIN = 1, MAX = 300;               // pixels per second (1 = super slow)
+    let running = false, rafId = null, lastTs = 0, carry = 0;
+
+    function clampSpeed() {
+      let v = parseFloat(speed.value);
+      if (isNaN(v)) v = MIN;
+      v = Math.max(MIN, Math.min(MAX, Math.round(v)));
+      speed.value = v;
+      return v;
+    }
+
+    function atBottom() {
+      return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1;
+    }
+
+    function frame(ts) {
+      if (!running) return;
+      if (!lastTs) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      carry += clampSpeed() * dt;           // accumulate fractional pixels for smooth super-slow motion
+      if (carry >= 1) {
+        const whole = Math.floor(carry);
+        window.scrollBy(0, whole);
+        carry -= whole;
+      }
+      if (atBottom()) { stop(); return; }
+      rafId = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (atBottom()) window.scrollTo(0, 0);
+      running = true; lastTs = 0; carry = 0;
+      play.textContent = "⏸"; play.classList.add("on");
+      rafId = requestAnimationFrame(frame);
+    }
+    function stop() {
+      running = false;
+      play.textContent = "▶"; play.classList.remove("on");
+      if (rafId) cancelAnimationFrame(rafId);
+    }
+    play.addEventListener("click", () => (running ? stop() : start()));
+
+    // Mouse wheel over the number box adjusts speed instead of scrolling the page
+    speed.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      speed.value = (parseFloat(speed.value) || MIN) + (e.deltaY < 0 ? 1 : -1);
+      clampSpeed();
+    }, { passive: false });
+    speed.addEventListener("change", clampSpeed);
+
+    // Draggable — position:fixed keeps it pinned on screen wherever you scroll
+    let dragging = false, offX = 0, offY = 0;
+    function pt(e) { return e.touches ? e.touches[0] : e; }
+    function down(e) {
+      dragging = true; panel.classList.add("dragging");
+      const r = panel.getBoundingClientRect(), p = pt(e);
+      offX = p.clientX - r.left; offY = p.clientY - r.top;
+      panel.style.right = "auto"; panel.style.bottom = "auto";
+      panel.style.left = r.left + "px"; panel.style.top = r.top + "px";
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!dragging) return;
+      const p = pt(e);
+      let x = p.clientX - offX, y = p.clientY - offY;
+      x = Math.max(4, Math.min(window.innerWidth  - panel.offsetWidth  - 4, x));
+      y = Math.max(4, Math.min(window.innerHeight - panel.offsetHeight - 4, y));
+      panel.style.left = x + "px"; panel.style.top = y + "px";
+    }
+    function up() { dragging = false; panel.classList.remove("dragging"); }
+    grip.addEventListener("mousedown", down);
+    grip.addEventListener("touchstart", down, { passive: false });
+    document.addEventListener("mousemove", move);
+    document.addEventListener("touchmove", move, { passive: false });
+    document.addEventListener("mouseup", up);
+    document.addEventListener("touchend", up);
+  })();
+</script>
+</body>
+</html>
