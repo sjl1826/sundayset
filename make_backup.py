@@ -594,7 +594,6 @@ There's just no one like the Lord"""),
 ]
 
 data = {"date": "2026-07-05", "text": {}, "links": {}, "photos": {}}
-data["text"]["eyebrow"] = "Setlist"
 data["text"]["band-name"] = "Sunday Set List"
 data["text"]["date"] = "Sunday · July 5, 2026"
 
