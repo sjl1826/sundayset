@@ -68,3 +68,4 @@ Drag the **⠿** handle to move the controller anywhere. It's hidden when printi
 
 Click **Export to PDF** (top-right) → *Save as PDF*. Photos and colors are set to
 print automatically, and songs won't split across pages.
+ 
