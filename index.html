@@ -58,16 +58,50 @@
     border-radius: 999px;
     margin-bottom: 22px;
   }
+  /* Glowing, hue-shifting aura behind the title */
+  .title-wrap {
+    position: relative;
+    display: inline-block;
+    isolation: isolate;
+  }
+  .title-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -55% -25%;
+    z-index: -1;
+    background: conic-gradient(from 0deg,
+      #4da2ff, #a78bfa, #f472b6, #fbbf24, #38bdf8, #4da2ff);
+    filter: blur(55px);
+    opacity: .5;
+    border-radius: 50%;
+    animation: aura-spin 9s linear infinite;
+  }
+  @keyframes aura-spin { to { transform: rotate(360deg); } }
+
   h1.band-name {
+    position: relative;
     font-size: clamp(40px, 8vw, 76px);
     line-height: 1.02;
     letter-spacing: -0.03em;
     font-weight: 800;
     margin: 0 0 12px;
-    background: linear-gradient(180deg, #0a1b2a 0%, #2a4a68 100%);
+    /* light sweeping across the letters */
+    background: linear-gradient(100deg,
+      #0a1b2a 0%, #22557f 30%, #4da2ff 45%, #ffffff 50%, #4da2ff 55%, #22557f 70%, #0a1b2a 100%);
+    background-size: 260% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    filter: drop-shadow(0 6px 34px rgba(77, 162, 255, .35));
+    animation: title-shine 6s linear infinite;
+  }
+  @keyframes title-shine {
+    to { background-position: 260% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .title-wrap::before { animation: none; }
+    h1.band-name { animation: none; }
   }
   .date {
     font-size: 18px;
@@ -93,10 +127,13 @@
   /* ---------- Members ---------- */
   .members {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(12, 1fr);
     gap: 16px;
     margin-bottom: 64px;
   }
+  /* 7 members → 3 across the top row, 4 across the bottom row */
+  .member { grid-column: span 3; }
+  .member:nth-child(-n + 3) { grid-column: span 4; }
   .member {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -180,12 +217,15 @@
     font-size: 13px;
     min-width: 24px;
   }
-  .toc .toc-key {
-    margin-left: auto;
+  .toc-title { margin-right: auto; }
+  .toc .toc-key,
+  .toc .toc-singer {
     font-size: 12px;
-    color: var(--muted);
     font-weight: 500;
+    white-space: nowrap;
   }
+  .toc .toc-key { color: var(--muted); }
+  .toc .toc-singer { color: var(--accent); }
 
   /* ---------- Songs ---------- */
   .songs { display: grid; gap: 24px; }
@@ -374,7 +414,6 @@
     padding: 10px 12px;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: none;
   }
   .scroller .grip {
     cursor: grab;
@@ -382,6 +421,7 @@
     font-size: 18px;
     line-height: 1;
     padding: 0 2px;
+    touch-action: none;
   }
   .scroller.dragging .grip { cursor: grabbing; }
   .scroller .play {
@@ -400,8 +440,27 @@
   }
   .scroller .play.on { background: var(--accent); }
   .scroller .speed-wrap { display: flex; flex-direction: column; align-items: center; }
+  .scroller .speed-row { display: flex; align-items: center; gap: 5px; }
+  .scroller .stepper {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    width: 36px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scroller .stepper:hover { background: var(--accent-soft); }
+  .scroller .stepper:active { background: var(--accent); color: #fff; }
   .scroller .speed {
-    width: 58px;
+    width: 48px;
     text-align: center;
     font-family: var(--font);
     font-size: 20px;
@@ -450,8 +509,8 @@
     width: 100%;
   }
   .modal-photo {
-    width: 240px;
-    height: 240px;
+    width: clamp(160px, 55vw, 240px);
+    height: clamp(160px, 55vw, 240px);
     margin: 0 auto 24px;
     border-radius: 50%;
     background-size: cover;
@@ -487,6 +546,50 @@
   }
   .modal-close:hover { color: var(--ink); }
 
+  /* ---------- Opening explosion ---------- */
+  #explosion {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .boom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: boom var(--dur) cubic-bezier(.15, .75, .25, 1) forwards;
+  }
+  @keyframes boom {
+    0%   { transform: translate(var(--ox), var(--oy)) scale(.3); opacity: 1; }
+    100% { transform: translate(calc(var(--ox) + var(--tx)), calc(var(--oy) + var(--ty))) scale(1); opacity: 0; }
+  }
+
+  /* ---------- Mobile / phone ---------- */
+  @media (max-width: 680px) {
+    .wrap { padding: 32px 16px 90px; }
+    .toolbar { top: 10px; right: 10px; }
+    .btn { padding: 6px 11px; font-size: 12px; border-radius: 9px; }
+    .datebar { margin-bottom: 30px; flex-wrap: wrap; }
+    /* 7 members → 2 per row on phones */
+    .members { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .member, .member:nth-child(-n + 3) { grid-column: auto; }
+    .photo { width: 78px; height: 78px; }
+    .toc { padding: 18px 16px; }
+    .toc ol { grid-template-columns: 1fr; }
+    .section-title { margin-bottom: 14px; }
+    .song-head { padding: 16px; gap: 12px; }
+    .song-title { font-size: 20px; }
+    .song-meta { margin-left: 0; width: 100%; }
+    .chords-label { padding: 16px 16px 0; }
+    .chords { font-size: 12.5px; padding: 12px 16px 22px; }
+    .modal-card { padding: 34px 22px 28px; }
+    .scroller { right: 10px; bottom: 10px; }
+  }
+
   @media print {
     :root { --shadow: none; }
     /* Force photos and colored chips to actually print (no "Background graphics" checkbox needed) */
@@ -496,6 +599,10 @@
     .datebar { display: none !important; }
     .scroller { display: none !important; }
     .modal { display: none !important; }
+    #explosion { display: none !important; }
+    /* Solid, static title for a clean PDF */
+    .title-wrap::before { display: none !important; }
+    h1.band-name { animation: none !important; filter: none !important; -webkit-text-fill-color: #0a1b2a; color: #0a1b2a; background: none; }
     .wrap { padding: 0; max-width: 100%; }
     .photo .hint { display: none; }
     .member, .toc, .song { break-inside: avoid; box-shadow: none; }
@@ -505,7 +612,7 @@
     [contenteditable]:focus { outline: none; }
   }
 </style>
-<script>window.PROJECT_SETS = {"2026-07-05": {"text": {"eyebrow": "Setlist", "band-name": "Sunday Set List", "date": "Sunday \u00b7 July 5, 2026", "song-title-1": "Jesus You're Beautiful", "song-key-1": "C", "song-singer-1": "Abraham", "song-chords-1": "[Verse]\nC                     F\nSpirit of wisdom, open my eyes again\nC                         F\nSpirit of revelation, open my heart again\n\n\n[Pre-Chorus]\n        C  G       F\n'Cause I want to see You\n        C  G      F\nLord, I want to see You\n          G          C\nSee You rightly, Jesus\n\n\n[Chorus]\n   C\nI know that Your eyes are like flames of fire\n   G\nI know that Your head is white as wool\n    F                    C\nI know that Your voice, it sounds like waters\nDm             C\nJesus, You're beautiful\n\n\n[Chorus 2]\nCsus4 C  G       Csus4 C\nThere is none like you   Lord\nG                 C\nJesus, you're beautiful\n\n\n[Bridge]\nC                             G\nThere is no one like You in the heavens or on the earth\nF                         C       Dm\nThere is no one like You in the heavens or on the earth", "song-title-2": "Jesus Lover of my Soul", "song-key-2": "C", "song-singer-2": "Sam", "song-chords-2": "C       G           Gsus G\nJesus, lover of my soul\nAm            F           G\nJesus, I will never let You go\n\nC               G             Gsus G\nYou've taken me from the miry clay\nAm (build sound)     F (break)      G (break)\nSet my feet upon the rock and now I know\nC           G Gsus G\nI love You, I need You\n\nAm                            F              G\nThough my world may fall, I'll never let You go\nC        G     Gsus     G\nMy Savior, my closest friend\nAm                    F              G\nI will worship You until the very end", "song-title-3": "Nothing is Impossible", "song-key-3": "C", "song-singer-3": "Sam", "song-chords-3": "[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\nF   C   Dm   F\n\n\n[Verse]\n\nC              Dm              F\nI'm not gonna live by what I see,\nAm            G               F\nI'm not gonna live by what I feel\n\n\n[Pre-Chorus]\n\nAm        G                F\nDeep down I, know that You're here with me\nAm        G          Dm    F\nI know that, You can do anything\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You", "song-title-4": "Above Every other Name", "song-key-4": "C", "song-singer-4": "Ana", "song-chords-4": "[Verse]\n\nC            G                     Am\n O Lord, my strength, You're my Redeemer\n   F\nForever I will love You\n\n\n[Pre-Chorus]\n\n C                    G/C\nNo one whose hope is in the Lord will ever be put to shame (E - B - C#m - A (Last time through))\nF/C                     C\n You are the Rock that is higher than I\n\n\n[Chorus]\n\n     C                 G\nYour name is above every other name\n    Am                  F\nYour name is above every other name\n\n\n[Bridge]\n\n     C           G\nHallelujah, hallelujah\n    Am          F\nHallelujah, hallelujah\n\n\n[Tag]\n\n C\nGod transcendent (beautiful, beautiful, beautiful)\n        C\nThere's no one like You (beautiful, beautiful, beautiful)", "song-title-5": "Center", "song-key-5": "A", "song-singer-5": "Ana", "song-chords-5": "[Verse 1]\nA\n Maybe we've made this complicated\nD\nMore than it was ever meant to be\nF#m\n   Hasn't it always been about the same thing\nD\nLord, bring us back to simple things\n\n\n[Chorus]\nD           F#m    A    E                          D\nYou, be the center of it all my heart belongs to You\n    F#m    A     E                             C#m\nMy Savior all in all You're the one I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Verse 2]\nA\n Teach us to discern the moment\n         D\nWhen to serve and when to sit here at Your feet\nF#m\n   Keep us awake to what's important\n          D\nJust like Mary chose the better thing\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Tag]\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                     C#m\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                     C#m\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 E/G#\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 A\nEverything for the honor of Your Name\n\n\n[Tag]\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n\n\n[Chorus]\n     D           F#m    A    E                          D\nFor You, are the center of it all my heart belongs to You\n    F#m    A     E                                C#m\nMy Savior all in all You're the One I hold on to\n                        F#m       E\nFor the beauty of Your Name my soul will live to say\n          E\nJesus, I love You\n\n\n[Outro]\n          A/C#    D           E\nMy soul will live to say Jesus, I love You\n          A/C#    D             E        D\nMy soul will live to say Jesus, I love You", "song-title-6": "You Deserve the Glory", "song-key-6": "A", "song-singer-6": "P. Joanne", "song-chords-6": "[Verse 1]\n\n              A\nYou deserve the glory\n       C#m   F#m\nAnd the honour\n        Bm\nLord, we lift our hands in worship\n      E\nAs we lift your Holy name\n\n(repeat)\n\n\n[Chorus]\n\n     A\nFor you are great\n       C#7          F#m\nYou do miracle so great\n        C#m             Bm\nThere is no one else like you\n       DM7  C#m Bm  E    A\nThere is no one else like you", "song-title-7": "No one like the Lord", "song-key-7": "A", "song-singer-7": "Sam", "song-chords-7": "[Verse 1]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n(Hey)\n\n\n[Verse 2]\nF#m                    D\n   There is One on the throne\n    A      C#m7\nJesus, holy\n(You are, You are)\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n\n\n[Chorus]\n(So we sing)\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n(Yeah)\n\n\n[Verse 3]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n          A          E\nAll the honor and glory\n(You are, You are)\n\n\n[Chorus]\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n              F#m    E/G#      A\nWoah, and the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                E                F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh and we cry)\nF#m    E/G#   A\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E              F#m\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                    F#m\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E                 F#m\nAnd we crown You Lord of all\n\n                    Bm\nWe crown You, You are worthy\n                    F#m/A\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\n        D         E           F#m\nAll of the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                              F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh, You are)\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n                D      E         F#m\nAnd all of the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                B\n'Cause there's no one like the Lord\n\n\n[Interlude]\nD\nThere's no one like you\nB\nThere's just no one like you\n      D\nYeah\n(There's no one like the Lord)\n                          B\nThere's no one like the Lord\n(There's no one like the Lord)\n                          D\nSo wonderful in all His ways\n(There's no one like the Lord)\n                          B\nSo beautiful in all His ways\n(There's no one like the Lord)\n            D\nSo majestic\n(There's no one like the Lord)\n                        B\nOh the King above all Kings\n(There's no one like the Lord)\n        D\nYeah\n(There's no one like the Lord)\n                            B\nOh the angels around your throne\n(There's no one like the Lord)\nEvery time they sing, they sing a new song at your feet\nD\n(There's no one like the Lord)\n                        B\nThey cry Holy, Holy, Holy\n(There's no one like the Lord)\n                        D\nThey cry worthy, worthy, worthy\n(There's no one like the Lord)\n                          B\n'cause there's no like you\n(There's no one like the Lord)\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        B\nAnd we crown You King of glory\n                        D\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                          F#m/A\nWe crown You, You are worthy\n                          B\nWe crown You, You are worthy\n                          D\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\nD         E      F#m\nAll the creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\nE2                    F#m\nThere's no one like the Lord\n        D       E2         F#m\nAnd the elders, creatures bow\n        Bm7                   D\nGiving praise to Him and Him alone\n              E2                B\n'Cause there's no one like the Lord\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\n\nD           E2                 F#m\nThere's just no one like the Lord"}, "links": {"1": "https://www.youtube.com/results?search_query=Jesus+You%27re+Beautiful+worship+chords", "2": "https://www.youtube.com/results?search_query=Jesus+Lover+of+my+Soul+worship+chords", "3": "https://www.youtube.com/results?search_query=Nothing+is+Impossible+worship+chords", "4": "https://www.youtube.com/results?search_query=Above+Every+other+Name+worship+chords", "5": "https://www.youtube.com/results?search_query=Center+worship+chords", "6": "https://www.youtube.com/results?search_query=You+Deserve+the+Glory+worship+chords", "7": "https://www.youtube.com/results?search_query=No+one+like+the+Lord+worship+chords"}, "photos": {"0": "url('images/01-joanne.jpg')", "1": "url('images/02-sam.jpg')", "2": "url('images/03-ana.jpg')", "3": "url('images/04-abraham.jpg')", "4": "url('images/05-edwin.jpg')", "5": "url('images/06-gabe.jpg')", "6": "url('images/07-andrew.jpg')"}}}; window.DEFAULT_DATE = "2026-07-05";</script>
+<script>window.PROJECT_SETS = {"2026-07-05": {"text": {"band-name": "Sunday Set List", "date": "Sunday \u00b7 July 5, 2026", "song-title-1": "Jesus You're Beautiful", "song-key-1": "C", "song-singer-1": "Abraham", "song-chords-1": "[Verse]\nC                     F\nSpirit of wisdom, open my eyes again\nC                         F\nSpirit of revelation, open my heart again\n\n\n[Pre-Chorus]\n        C  G       F\n'Cause I want to see You\n        C  G      F\nLord, I want to see You\n          G          C\nSee You rightly, Jesus\n\n\n[Chorus]\n   C\nI know that Your eyes are like flames of fire\n   G\nI know that Your head is white as wool\n    F                    C\nI know that Your voice, it sounds like waters\nDm             C\nJesus, You're beautiful\n\n\n[Chorus 2]\nCsus4 C  G       Csus4 C\nThere is none like you   Lord\nG                 C\nJesus, you're beautiful\n\n\n[Bridge]\nC                             G\nThere is no one like You in the heavens or on the earth\nF                         C       Dm\nThere is no one like You in the heavens or on the earth", "song-title-2": "Jesus Lover of my Soul", "song-key-2": "C", "song-singer-2": "Sam", "song-chords-2": "C       G           Gsus G\nJesus, lover of my soul\nAm            F           G\nJesus, I will never let You go\n\nC               G             Gsus G\nYou've taken me from the miry clay\nAm (build sound)     F (break)      G (break)\nSet my feet upon the rock and now I know\nC           G Gsus G\nI love You, I need You\n\nAm                            F              G\nThough my world may fall, I'll never let You go\nC        G     Gsus     G\nMy Savior, my closest friend\nAm                    F              G\nI will worship You until the very end", "song-title-3": "Nothing is Impossible", "song-key-3": "C", "song-singer-3": "Sam", "song-chords-3": "[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\nF   C   Dm   F\n\n\n[Verse]\n\nC              Dm              F\nI'm not gonna live by what I see,\nAm            G               F\nI'm not gonna live by what I feel\n\n\n[Pre-Chorus]\n\nAm        G                F\nDeep down I, know that You're here with me\nAm        G          Dm    F\nI know that, You can do anything\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Interlude]\n\nF   C   Dm   F\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\n\n\n[Chorus]\n\nC                             G                    Am\nThrough You I can do anything, I can do all things\n                                F\n'Cause it's You who gives me strength, nothing is impossible\nC                             G                          Am\nThrough You blind eyes are open, strongholds are broken\n                   F\nI am living by faith, nothing is impossible\n\n\n[Bridge]\n\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You\nF           C\nI believe, I believe,\nDm          F\nI believe, I believe in You", "song-title-4": "Above Every other Name", "song-key-4": "C", "song-singer-4": "Ana", "song-chords-4": "[Verse]\n\nC            G                     Am\n O Lord, my strength, You're my Redeemer\n   F\nForever I will love You\n\n\n[Pre-Chorus]\n\n C                    G/C\nNo one whose hope is in the Lord will ever be put to shame (E - B - C#m - A (Last time through))\nF/C                     C\n You are the Rock that is higher than I\n\n\n[Chorus]\n\n     C                 G\nYour name is above every other name\n    Am                  F\nYour name is above every other name\n\n\n[Bridge]\n\n     C           G\nHallelujah, hallelujah\n    Am          F\nHallelujah, hallelujah\n\n\n[Tag]\n\n C\nGod transcendent (beautiful, beautiful, beautiful)\n        C\nThere's no one like You (beautiful, beautiful, beautiful)", "song-title-5": "Center", "song-key-5": "A", "song-singer-5": "Ana", "song-chords-5": "[Verse 1]\nA\n Maybe we've made this complicated\nD\nMore than it was ever meant to be\nF#m\n   Hasn't it always been about the same thing\nD\nLord, bring us back to simple things\n\n\n[Chorus]\nD           F#m    A    E                          D\nYou, be the center of it all my heart belongs to You\n    F#m    A     E                             C#m\nMy Savior all in all You're the one I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Verse 2]\nA\n Teach us to discern the moment\n         D\nWhen to serve and when to sit here at Your feet\nF#m\n   Keep us awake to what's important\n          D\nJust like Mary chose the better thing\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Chorus]\n     D           F#m    A    E                         D\nFor You, are the center of it all my heart belongs to You\n   F#m    A     E                             C#m\nMy Savior all in all You're the One I hold on to\n                        F#m\nFor the beauty of Your Name\n                  D               E\nMy soul will live to say Jesus, I love You\n\n\n[Tag]\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n        F#m     C#m           D                   E\nOh how I love You,    oh how I love You Jesus I love You\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                     C#m\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                     C#m\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 E/G#\nEverything for the honor of Your Name\n\n\n[Bridge]\n        D                             E\nMy whole life for Your glory my whole world for You only\n    F#m                 A\nEverything for the honor of Your Name\n      D                       E\nIf my days tell a story let it be of You only\n    F#m                 A\nEverything for the honor of Your Name\n\n\n[Tag]\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n        D     E       F#m                 C#m\nOh how I love You oh how I love You Jesus I love You\n\n\n[Chorus]\n     D           F#m    A    E                          D\nFor You, are the center of it all my heart belongs to You\n    F#m    A     E                                C#m\nMy Savior all in all You're the One I hold on to\n                        F#m       E\nFor the beauty of Your Name my soul will live to say\n          E\nJesus, I love You\n\n\n[Outro]\n          A/C#    D           E\nMy soul will live to say Jesus, I love You\n          A/C#    D             E        D\nMy soul will live to say Jesus, I love You", "song-title-6": "You Deserve the Glory", "song-key-6": "A", "song-singer-6": "P. Joanne", "song-chords-6": "[Verse 1]\n\n              A\nYou deserve the glory\n       C#m   F#m\nAnd the honour\n        Bm\nLord, we lift our hands in worship\n      E\nAs we lift your Holy name\n\n(repeat)\n\n\n[Chorus]\n\n     A\nFor you are great\n       C#7          F#m\nYou do miracle so great\n        C#m             Bm\nThere is no one else like you\n       DM7  C#m Bm  E    A\nThere is no one else like you", "song-title-7": "No one like the Lord", "song-key-7": "A", "song-singer-7": "Sam", "song-chords-7": "[Verse 1]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n(Hey)\n\n\n[Verse 2]\nF#m                    D\n   There is One on the throne\n    A      C#m7\nJesus, holy\n(You are, You are)\nF#m                Bm7\n    He is worthy of praise\n    A          E\nHonor and glory\n\n\n[Chorus]\n(So we sing)\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n(Yeah)\n\n\n[Verse 3]\n                    D\nThere is One on the throne\n    A       C#m7\nJesus, holy\nF#m                Bm7\n    He is worthy of praise\n          A          E\nAll the honor and glory\n(You are, You are)\n\n\n[Chorus]\nF#m    E/G#   A\nWorthy is the Lamb\n         Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n              F#m    E/G#      A\nWoah, and the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                E                F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh and we cry)\nF#m    E/G#   A\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n        F#m    E/G#      A\nAnd the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E              F#m\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                    F#m\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        D\nAnd we crown You King of glory\n      E                 F#m\nAnd we crown You Lord of all\n\n                    Bm\nWe crown You, You are worthy\n                    F#m/A\nWe crown You, You are worthy\n                    D\nWe crown You, You are worthy\n    E                   F#m\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\n        D         E           F#m\nAll of the elders, creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n                              F#m\n'Cause there's no one like the Lord\n\n\n[Chorus]\n(Oh, You are)\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n        E                 F#m\nThere's no one like the Lord\n                D      E         F#m\nAnd all of the elders, creatures bow\n        Bm                D\nGiving praise to Him and Him alone\n              E                B\n'Cause there's no one like the Lord\n\n\n[Interlude]\nD\nThere's no one like you\nB\nThere's just no one like you\n      D\nYeah\n(There's no one like the Lord)\n                          B\nThere's no one like the Lord\n(There's no one like the Lord)\n                          D\nSo wonderful in all His ways\n(There's no one like the Lord)\n                          B\nSo beautiful in all His ways\n(There's no one like the Lord)\n            D\nSo majestic\n(There's no one like the Lord)\n                        B\nOh the King above all Kings\n(There's no one like the Lord)\n        D\nYeah\n(There's no one like the Lord)\n                            B\nOh the angels around your throne\n(There's no one like the Lord)\nEvery time they sing, they sing a new song at your feet\nD\n(There's no one like the Lord)\n                        B\nThey cry Holy, Holy, Holy\n(There's no one like the Lord)\n                        D\nThey cry worthy, worthy, worthy\n(There's no one like the Lord)\n                          B\n'cause there's no like you\n(There's no one like the Lord)\n\n\n[Bridge]\n                        F#m\nAnd we crown You King of glory\n                        F#m/A\nAnd we crown You King of glory\n                        B\nAnd we crown You King of glory\n                        D\nAnd we crown You Lord of all\n\n                    F#m\nWe crown You, You are worthy\n                          F#m/A\nWe crown You, You are worthy\n                          B\nWe crown You, You are worthy\n                          D\nWe crown You Lord of all\n\n\n[Chorus]\n          D       E/D    D\nOh we sing worthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\n              E                F#m\nAnd there's no one like the Lord\nD         E      F#m\nAll the creatures bow\n        Bm                    D\nGiving praise to Him and Him alone\n              E                F#m\n'Cause there's no one like the Lord\n\nD        E        F#m\nWorthy is the Lamb\n        Bm                    D\nWho was slain and seated on the throne\nE2                    F#m\nThere's no one like the Lord\n        D       E2         F#m\nAnd the elders, creatures bow\n        Bm7                   D\nGiving praise to Him and Him alone\n              E2                B\n'Cause there's no one like the Lord\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\nThere's no one like you\nD           E2              F#m\n (There's no one like the Lord)\n\nD           E2                 F#m\nThere's just no one like the Lord"}, "links": {"1": "https://www.youtube.com/results?search_query=Jesus+You%27re+Beautiful+worship+chords", "2": "https://www.youtube.com/results?search_query=Jesus+Lover+of+my+Soul+worship+chords", "3": "https://www.youtube.com/results?search_query=Nothing+is+Impossible+worship+chords", "4": "https://www.youtube.com/results?search_query=Above+Every+other+Name+worship+chords", "5": "https://www.youtube.com/results?search_query=Center+worship+chords", "6": "https://www.youtube.com/results?search_query=You+Deserve+the+Glory+worship+chords", "7": "https://www.youtube.com/results?search_query=No+one+like+the+Lord+worship+chords"}, "photos": {"0": "url('images/01-joanne.jpg')", "1": "url('images/02-sam.jpg')", "2": "url('images/03-ana.jpg')", "3": "url('images/04-abraham.jpg')", "4": "url('images/05-edwin.jpg')", "5": "url('images/06-gabe.jpg')", "6": "url('images/07-andrew.jpg')"}}}; window.DEFAULT_DATE = "2026-07-05";</script>
 </head>
 <body>
 
@@ -523,8 +630,9 @@
 
   <!-- HERO -->
   <header class="hero">
-    <span class="eyebrow" contenteditable="true" data-save="eyebrow">Setlist</span>
-    <h1 class="band-name" contenteditable="true" data-save="band-name">Our Band Name</h1>
+    <div class="title-wrap">
+      <h1 class="band-name" contenteditable="true" data-save="band-name">Our Band Name</h1>
+    </div>
     <div class="date" contenteditable="true" data-save="date">Friday · July 2, 2026</div>
   </header>
 
@@ -601,6 +709,7 @@
       <a href="#${id}">
         <span class="toc-title" data-song="${i}">Song ${i}</span>
         <span class="toc-key" data-key="${i}">—</span>
+        <span class="toc-singer" data-singer="${i}"></span>
       </a>`;
     tocEl.appendChild(li);
 
@@ -632,8 +741,10 @@
     for (let i = 1; i <= SONG_COUNT; i++) {
       const title = document.querySelector(`[data-title="${i}"]`).textContent.trim();
       const key = document.querySelector(`[data-keyval="${i}"]`).textContent.trim();
+      const singer = document.querySelector(`[data-save="song-singer-${i}"]`).textContent.trim();
       document.querySelector(`[data-song="${i}"]`).textContent = title || ("Song " + i);
       document.querySelector(`[data-key="${i}"]`).textContent = key ? ("Key of " + key) : "—";
+      document.querySelector(`[data-singer="${i}"]`).textContent = singer && singer !== "Name" ? singer : "";
     }
   }
   document.addEventListener("input", syncToc);
@@ -730,12 +841,16 @@
 </script>
 
 <!-- Auto-scroll controller: draggable, stays in the corner, wheel sets speed -->
-<div class="scroller" id="scroller" title="Scroll the number to change speed · drag ⠿ to move">
+<div class="scroller" id="scroller" title="Set the speed, then press play · drag ⠿ to move">
   <span class="grip" id="scrollerGrip" title="Drag to move">⠿</span>
   <button class="play" id="scrollPlay" title="Start / stop auto-scroll" aria-label="Start or stop auto-scroll">▶</button>
   <div class="speed-wrap">
-    <input class="speed" id="scrollSpeed" type="number" min="1" max="300" step="1" value="6"
-           title="Speed (pixels/second). 1 = super slow. Scroll your mouse wheel over this box to change it." />
+    <div class="speed-row">
+      <button class="stepper" id="speedDown" aria-label="Slower">−</button>
+      <input class="speed" id="scrollSpeed" type="number" inputmode="numeric" min="1" max="300" step="1" value="6"
+             title="Speed (1 = super slow). Tap − / + or scroll the wheel to change." />
+      <button class="stepper" id="speedUp" aria-label="Faster">+</button>
+    </div>
     <span class="lbl">speed</span>
   </div>
 </div>
@@ -748,7 +863,11 @@
     const speed  = document.getElementById("scrollSpeed");
 
     const MIN = 1, MAX = 300;               // pixels per second (1 = super slow)
-    let running = false, rafId = null, lastTs = 0, carry = 0;
+    let running = false, rafId = null, lastTs = 0, pos = 0;
+
+    // The scrolling element (bypassing scrollBy avoids CSS scroll-behavior: smooth,
+    // which otherwise animates every step and cripples the speed on mobile).
+    const scroller = document.scrollingElement || document.documentElement;
 
     function clampSpeed() {
       let v = parseFloat(speed.value);
@@ -758,8 +877,8 @@
       return v;
     }
 
-    function atBottom() {
-      return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1;
+    function maxScroll() {
+      return document.documentElement.scrollHeight - window.innerHeight;
     }
 
     function frame(ts) {
@@ -767,19 +886,16 @@
       if (!lastTs) lastTs = ts;
       const dt = (ts - lastTs) / 1000;
       lastTs = ts;
-      carry += clampSpeed() * dt;           // accumulate fractional pixels for smooth super-slow motion
-      if (carry >= 1) {
-        const whole = Math.floor(carry);
-        window.scrollBy(0, whole);
-        carry -= whole;
-      }
-      if (atBottom()) { stop(); return; }
+      pos += clampSpeed() * dt;                 // float accumulator → smooth even at 1 px/s
+      scroller.scrollTop = pos;                 // direct assignment = instant scroll (not smoothed)
+      if (pos >= maxScroll()) { stop(); return; }
       rafId = requestAnimationFrame(frame);
     }
 
     function start() {
-      if (atBottom()) window.scrollTo(0, 0);
-      running = true; lastTs = 0; carry = 0;
+      pos = scroller.scrollTop;
+      if (pos >= maxScroll() - 1) { pos = 0; scroller.scrollTop = 0; }
+      running = true; lastTs = 0;
       play.textContent = "⏸"; play.classList.add("on");
       rafId = requestAnimationFrame(frame);
     }
@@ -797,6 +913,11 @@
       clampSpeed();
     }, { passive: false });
     speed.addEventListener("change", clampSpeed);
+
+    // + / − buttons (works great on touch screens)
+    function bump(delta) { speed.value = (parseFloat(speed.value) || MIN) + delta; clampSpeed(); }
+    document.getElementById("speedDown").addEventListener("click", () => bump(-1));
+    document.getElementById("speedUp").addEventListener("click", () => bump(1));
 
     // Draggable — position:fixed keeps it pinned on screen wherever you scroll
     let dragging = false, offX = 0, offY = 0;
@@ -824,6 +945,41 @@
     document.addEventListener("touchmove", move, { passive: false });
     document.addEventListener("mouseup", up);
     document.addEventListener("touchend", up);
+  })();
+
+  /* ---------------- Opening explosion ---------------- */
+  (function () {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const title = document.querySelector(".band-name");
+    const rect = title
+      ? title.getBoundingClientRect()
+      : { left: window.innerWidth / 2, top: window.innerHeight / 3, width: 0, height: 0 };
+    const ox = rect.left + rect.width / 2;
+    const oy = rect.top + rect.height / 2;
+    const colors = ["#4da2ff", "#a78bfa", "#f472b6", "#fbbf24", "#38bdf8", "#34d399", "#ffffff"];
+
+    const layer = document.createElement("div");
+    layer.id = "explosion";
+    document.body.appendChild(layer);
+
+    const N = 48;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement("span");
+      p.className = "boom";
+      const angle = (Math.PI * 2 * i) / N + (i % 3) * 0.16;
+      const dist = 150 + ((i * 53) % 280);      // varied spread
+      const size = 8 + ((i * 13) % 12);
+      p.style.width = size + "px";
+      p.style.height = size + "px";
+      p.style.background = colors[i % colors.length];
+      p.style.setProperty("--ox", ox + "px");
+      p.style.setProperty("--oy", oy + "px");
+      p.style.setProperty("--tx", (Math.cos(angle) * dist) + "px");
+      p.style.setProperty("--ty", (Math.sin(angle) * dist + dist * 0.15) + "px");
+      p.style.setProperty("--dur", (0.9 + (i % 7) * 0.09).toFixed(2) + "s");
+      layer.appendChild(p);
+    }
+    setTimeout(() => layer.remove(), 1900);
   })();
 </script>
 </body>
