@@ -67,7 +67,7 @@ My Savior, my closest friend
 Am                    F              G
 I will worship You until the very end"""),
 
-    ("Nothing is Impossible", "C", "Sam", """\
+    ("Nothing is Impossible", "C", "P. Joanne", """\
 [Chorus]
 
 C                             G                    Am
@@ -591,6 +591,101 @@ D           E2              F#m
 
 D           E2                 F#m
 There's just no one like the Lord"""),
+
+    # ---- Extra songs (rendered in the "Extra Songs" section) ----
+    ("The More I Seek You", "F", "P. Joanne", """\
+[Verse]
+
+F            C
+  The more I seek You
+Dm           A#
+  The more I find You
+F            C
+  The more I find You
+Dm           A#
+  The more I love You
+
+
+[Chorus]
+
+F
+  I wanna sit at your feet
+C
+  Drink from the cup in Your hands
+Dm
+  Lay back against You and breathe
+A#
+  Feel Your heart beat
+F
+  This love is so deep
+C
+  It's more than I can stand
+Dm
+  I melt in Your peace
+A#
+  It's overwhelming"""),
+
+    ("Draw Me Close to You", "Bb", "Sam", """\
+[Verse 1]
+
+A#                  D#
+ Draw me close to you
+Fsus           A#
+ Never let me go
+Fsus           D#
+ I lay it all down again
+ Gm                   D#
+ To hear you say that I'm your friend
+
+
+[Verse 2]
+
+A#               D#
+ You are my desire
+ Fsus              A#
+ No one else will do
+ Fsus                        D#
+ 'Cause nothing else could take your place
+ Gm                    D#
+ To feel the warmth of your embrace
+A#               Cm  F                  A#
+Help me find the way, bring me back to you
+
+
+[Chorus]
+
+A#      F       D#
+You're all I want
+A#      F     D#  F
+You're all I ever needed
+A#      F      D#
+ You're all I want
+Cm           F         A#
+Help me know you are near"""),
+
+    ("Spirit of the Living God", "D", "P. Joanne", """\
+[Verse]
+
+D             A  D/F# Em
+Spirit of the living God,
+D      G    A  D
+Fall afresh on me
+D             A  D/F# Em
+Spirit of the living God,
+D      G    A  D
+Fall afresh on me
+G
+Melt me
+D
+Mold me
+E7
+Fill me
+A
+Use me
+D             A  D/F# Em
+Spirit of the living God,
+D      G    A  D
+Fall afresh on me"""),
 ]
 
 data = {"date": "2026-07-05", "text": {}, "links": {}, "photos": {}}
