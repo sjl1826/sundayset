@@ -9,9 +9,10 @@ draggable auto-scroll controller (with a super-slow speed) for hands-free readin
 | File | What it is |
 |------|------------|
 | `index.html` | The site. This is what GitHub Pages serves. |
+| `sets/` | One JSON file per set list (`sets/2026-08-02.json`). The content source. |
 | `images/` | Member photos (real image files). |
 | `template.html` | Design source. Editable in the browser; used by `build.py`. |
-| `build.py` | Regenerates `index.html` (and `images/`) from a content backup. |
+| `build.py` | Regenerates `index.html` (and `images/`) from every set in `sets/`. |
 
 ---
 
@@ -40,21 +41,42 @@ That's it — `index.html` at the repo root is served automatically.
 
 ## Updating the content
 
-The published page shows whatever is baked into `index.html`. To change songs,
-keys, singers, chords, links, or photos:
+The published page shows whatever is baked into `index.html`. Every set list lives in
+its own file under `sets/`, and the **Set list** dropdown at the top of the page
+switches between them (it opens on the most recent date).
 
-1. Open `template.html` in your browser (double-click).
-2. Edit everything inline — click text to type, click a photo circle to swap it,
-   click 🔗 to set a song link, paste chords.
-3. Click **Save backup** → you get `band-setlist-backup.json`.
-4. Rebuild, then push:
+### Add a new set
+
+1. Copy an existing set as a starting point:
    ```sh
-   python3 build.py band-setlist-backup.json
-   git add -A && git commit -m "Update setlist" && git push
+   cp sets/2026-08-02.json sets/2026-08-09.json
+   ```
+2. Edit the new file:
+   - `date` — the set's ID (`YYYY-MM-DD`); the file name should match.
+   - `text` — `band-name`, `date` (the label people read), and per-song
+     `song-title-N` / `song-key-N` / `song-singer-N` / `song-chords-N`.
+     Anything you leave out shows the blank placeholder.
+   - `links` — `"N": "https://…"` per song.
+   - `roster` — the lineup for *that* set: `name`, `role`, `icon`, `photo`.
+     Lineups may differ in size between sets; the member grid adapts.
+3. Rebuild, then push:
+   ```sh
+   python3 build.py
+   git add -A && git commit -m "Add 2026-08-09 set" && git push
    ```
 
-Running `build.py` with the backup extracts any new photos into `images/` and
-bakes your text/links into `index.html`.
+### Edit in the browser instead
+
+1. Open `template.html` in your browser (double-click).
+2. Edit everything inline — click text to type, click 🔗 to set a song link,
+   paste chords.
+3. Save the JSON it gives you, then bake it in alongside the committed sets:
+   ```sh
+   python3 build.py band-setlist-backup.json
+   ```
+
+Running `build.py` extracts any inline (base64) photos into `images/` and bakes
+every set's text, links, and lineup into `index.html`.
 
 ---
 
@@ -68,4 +90,3 @@ Drag the **⠿** handle to move the controller anywhere. It's hidden when printi
 
 Click **Export to PDF** (top-right) → *Save as PDF*. Photos and colors are set to
 print automatically, and songs won't split across pages.
-  
