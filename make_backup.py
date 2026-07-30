@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate band-setlist-backup.json from the Sunday Worship Set content."""
+"""Generate sets/2026-07-05.json from the July 5 Sunday Worship Set content."""
 import json, os, urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -688,9 +688,24 @@ D      G    A  D
 Fall afresh on me"""),
 ]
 
-data = {"date": "2026-07-05", "text": {}, "links": {}, "photos": {}}
+roster = [
+    # (name, role, icon, photo)
+    ("Joanne", "Keyboard / Vox", "🎹", "images/01-joanne.jpg"),
+    ("Sam", "Acoustic Guitar / Vox", "🎸", "images/02-sam.jpg"),
+    ("Ana", "Vox", "🎤", "images/03-ana.jpg"),
+    ("Abraham", "Vox", "🎤", "images/04-abraham.jpg"),
+    ("Edwin", "Bass Guitar", "🎸", "images/05-edwin.jpg"),
+    ("Gabe", "Drums", "🥁", "images/06-gabe.jpg"),
+    ("Andrew", "Sound", "🎛️", "images/07-andrew.jpg"),
+]
+
+data = {"date": "2026-07-05", "text": {}, "links": {}}
 data["text"]["band-name"] = "Sunday Set List"
 data["text"]["date"] = "Sunday · July 5, 2026"
+data["roster"] = [
+    {"name": name, "role": role, "icon": icon, "photo": photo}
+    for name, role, icon, photo in roster
+]
 
 for i, (title, key, singer, chords) in enumerate(songs, start=1):
     data["text"][f"song-title-{i}"] = title
@@ -700,7 +715,8 @@ for i, (title, key, singer, chords) in enumerate(songs, start=1):
     q = urllib.parse.quote_plus(f"{title} worship chords")
     data["links"][str(i)] = f"https://www.youtube.com/results?search_query={q}"
 
-out = os.path.join(HERE, "band-setlist-backup.json")
+out = os.path.join(HERE, "sets", f"{data['date']}.json")
+os.makedirs(os.path.dirname(out), exist_ok=True)
 with open(out, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 print("Wrote", out)
