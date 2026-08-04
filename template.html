@@ -2,8 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Sunday Worship Set</title>
+<!-- Where the set lists come from. Edit config.js; no rebuild needed. -->
+<script src="config.js"></script>
+<!-- Warm the connection to Apps Script while the rest of the page is still parsing. -->
+<link rel="preconnect" href="https://script.google.com" crossorigin />
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
+<script>
+  /* Ask the Google Doc for the set lists right now — before the stylesheet, the images,
+     or any of the page script. By the time the picker exists, the answer is often
+     already here, so the tabs people can choose from are the doc's from the first paint. */
+  (function () {
+    var url = (new URLSearchParams(location.search).get("doc") || window.SETLIST_DOC_URL || "").trim();
+    if (!url || location.protocol === "file:") return;   // file:// pages may not fetch https
+    var body = fetch(url, { cache: "no-store" }).then(function (response) {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.text();
+    });
+    body.catch(function () {});                          // the page script does the reporting
+    window.SETLIST_DOC_REQUEST = { url: url, body: body };
+  })();
+</script>
+<script>
+  /* Before the stylesheet: a dark room shouldn't get a white flash on every load. */
+  (function () {
+    try {
+      const saved = JSON.parse(localStorage.getItem("setlist-display") || "null") || {};
+      const dark = "dark" in saved
+        ? saved.dark
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (dark) document.documentElement.dataset.theme = "dark";
+      if (saved.chordStep) document.documentElement.dataset.chordStep = saved.chordStep;
+    } catch (error) { /* private mode: defaults are fine */ }
+  })();
+</script>
 <style>
   :root {
     --bg: #f6f9fc;
@@ -17,6 +50,40 @@
     --radius: 20px;
     --shadow: 0 1px 2px rgba(10,27,42,.04), 0 12px 40px rgba(10,27,42,.06);
     --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --chip-bg: #f2f6fa;
+    --chords-ink: #142a3d;
+    --on-accent: #ffffff;
+    --glow: .5;
+    /* Chord size, set by the A- / A+ control and remembered per person. */
+    --chords-size: 14px;
+    --chords-size-phone: 12.5px;
+  }
+
+  /* Stage mode: a dim room, a bright phone, and a face two feet away. Same layout,
+     darker paper, and colours that stay legible without shouting. */
+  :root[data-theme="dark"] h1.band-name {
+    background: linear-gradient(100deg,
+      #cfe3f7 0%, #8ec5ff 30%, #6fb5ff 45%, #ffffff 50%, #6fb5ff 55%, #8ec5ff 70%, #cfe3f7 100%);
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0b1119;
+    --panel: #141c27;
+    --ink: #e8eef5;
+    --muted: #93a6ba;
+    --line: #26313f;
+    --accent: #6fb5ff;
+    --accent-dark: #6fb5ff;
+    --accent-soft: #1b2836;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 40px rgba(0,0,0,.45);
+    --chip-bg: #1c2734;
+    --chords-ink: #dbe6f2;
+    --on-accent: #06121f;
+    --glow: .22;
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
@@ -25,6 +92,7 @@
 
   body {
     margin: 0;
+    overflow-x: hidden;
     font-family: var(--font);
     color: var(--ink);
     background:
@@ -37,7 +105,8 @@
   .wrap {
     max-width: 1040px;
     margin: 0 auto;
-    padding: 56px 28px 96px;
+    /* The top padding clears the fixed toolbar, so nothing sits on the set picker. */
+    padding: 84px 28px 96px;
   }
 
   /* ---------- Header ---------- */
@@ -72,7 +141,7 @@
     background: conic-gradient(from 0deg,
       #4da2ff, #a78bfa, #f472b6, #fbbf24, #38bdf8, #4da2ff);
     filter: blur(55px);
-    opacity: .5;
+    opacity: var(--glow);
     border-radius: 50%;
     animation: aura-spin 9s linear infinite;
   }
@@ -107,11 +176,6 @@
     font-size: 18px;
     color: var(--muted);
     font-weight: 500;
-  }
-  [contenteditable]:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
-    border-radius: 8px;
   }
 
   /* ---------- Section titles ---------- */
@@ -278,20 +342,18 @@
     text-decoration: none;
     border-bottom: 2px solid transparent;
   }
-  a.song-title:hover { border-bottom-color: var(--accent); color: var(--accent); }
-  .song-title-link { display: inline-flex; align-items: center; gap: 8px; }
-  .link-btn {
-    border: 1px solid var(--line);
-    background: #fff;
-    color: var(--muted);
-    border-radius: 8px;
-    width: 30px; height: 30px;
-    cursor: pointer;
-    font-size: 14px;
-    display: inline-flex; align-items: center; justify-content: center;
-    flex: none;
+  /* Only a song with a link looks and behaves like one. */
+  .song-title.has-link { cursor: pointer; }
+  .song-title.has-link::after {
+    content: "▸";
+    font-size: 13px;
+    color: var(--accent);
+    margin-left: 8px;
+    vertical-align: middle;
   }
-  .link-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .song-title.has-link:hover { border-bottom-color: var(--accent); color: var(--accent); }
+  .song-title.has-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .song-title-link { display: inline-flex; align-items: center; gap: 8px; }
   .song-meta {
     margin-left: auto;
     display: flex;
@@ -305,7 +367,7 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--ink);
-    background: #f2f6fa;
+    background: var(--chip-bg);
     border: 1px solid var(--line);
     border-radius: 999px;
     padding: 6px 14px;
@@ -329,17 +391,117 @@
   }
   .chords {
     font-family: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 14px;
+    font-size: var(--chords-size);
     line-height: 1.7;
-    white-space: pre-wrap;
+    /* pre-wrap keeps the chord spacing; the scroller is the escape hatch for a line
+       too wide to fit, so a long chord line never widens the whole page. */
+    white-space: pre;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     padding: 12px 26px 26px;
-    color: #142a3d;
+    color: var(--chords-ink);
     min-height: 90px;
   }
-  .chords:empty::before {
-    content: "Paste your chords / lyrics here…";
-    color: #a9b8c6;
+
+  /* ---------- Transpose: key chip + key menu ---------- */
+  /* A real button, so a tap anywhere in it counts — including the padding, the gaps
+     between the words, and on phones where taps on plain spans get swallowed. */
+  .key-chip {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    min-height: 34px;
+    padding: 6px 12px 6px 14px;
+    text-align: left;
   }
+  /* Every click reports the chip itself, never a word inside it. */
+  .key-chip > * { pointer-events: none; }
+  .key-chip:hover,
+  .key-chip[aria-expanded="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .key-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .key-chip .caret { font-size: 9px; color: var(--muted); }
+  .key-chip .shift {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .key-chip .shift:empty { display: none; }
+  .key-chip.transposed { border-color: var(--accent); background: var(--accent-soft); }
+  .key-chip.transposed .val { color: var(--accent); }
+
+  .key-menu {
+    position: fixed;
+    z-index: 90;
+    display: none;
+    width: 236px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(10, 27, 42, .18);
+    padding: 12px;
+  }
+  .key-menu.open { display: block; }
+  .key-menu-head {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 2px 8px;
+  }
+  .key-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .key-option {
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 0;
+    cursor: pointer;
+  }
+  .key-option:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .key-option[aria-selected="true"] {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: var(--on-accent);
+  }
+  .key-option.original::after {
+    content: "★";
+    font-size: 8px;
+    vertical-align: super;
+    color: var(--accent);
+    margin-left: 2px;
+  }
+  .key-option[aria-selected="true"].original::after { color: #9ecbff; }
+  .key-menu-foot {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .key-menu-foot button {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+  .key-menu-foot button:hover { color: var(--accent); border-color: var(--accent); }
+  .key-menu-foot .key-reset { flex: 1; text-align: left; }
 
   /* ---------- Toolbar ---------- */
   .toolbar {
@@ -352,11 +514,13 @@
   }
 
   /* ---------- Date picker ---------- */
+  /* Stacked, not in a row: the picker gets the full width of the bar to be tapped in,
+     and the status line underneath can never crowd it. */
   .datebar {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 40px;
   }
   .datebar label {
@@ -365,20 +529,47 @@
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--muted);
-  }
-  .datebar select {
-    font-family: var(--font);
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ink);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 10px 14px;
-    box-shadow: var(--shadow);
     cursor: pointer;
   }
+  .datebar select {
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: var(--font);
+    /* 16px keeps iOS from zooming the page when the picker opens. */
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    background-color: var(--panel);
+    /* The chevron that -webkit-appearance: none took away. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%235b7186' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+    background-size: 11px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    min-height: 54px;
+    min-width: min(360px, 100%);
+    padding: 14px 48px 14px 24px;
+    text-align: center;
+    text-align-last: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .datebar select:hover { border-color: var(--accent); background-color: var(--accent-soft); }
   .datebar select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .sync-status {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+  .sync-status:hover { background: var(--accent-soft); color: var(--accent); }
+  .sync-status:empty { display: none; }
+  .sync-status.working { color: var(--accent); }
+  .sync-status.warn { color: #b45309; }
   .btn {
     font-family: var(--font);
     font-size: 14px;
@@ -387,7 +578,7 @@
     padding: 10px 18px;
     cursor: pointer;
     border: 1px solid var(--line);
-    background: #fff;
+    background: var(--panel);
     color: var(--ink);
     box-shadow: var(--shadow);
     transition: transform .12s, background .15s;
@@ -395,10 +586,31 @@
   .btn:hover { background: var(--accent-soft); }
   .btn.primary {
     background: var(--accent-dark);
-    color: #fff;
+    color: var(--on-accent);
     border-color: var(--accent-dark);
   }
-  .btn.primary:hover { background: #0a2740; }
+  .btn.primary:hover { filter: brightness(1.15); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 500;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 44px 28px;
+    margin: 0 0 64px;
+  }
+  .text-size { display: flex; gap: 4px; }
+  .btn.icon {
+    min-width: 44px;
+    min-height: 40px;
+    padding: 8px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .btn.icon[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
   .footnote {
     text-align: center;
@@ -427,17 +639,17 @@
   }
   .scroller .grip {
     cursor: grab;
-    color: #b9c6d3;
-    font-size: 18px;
+    color: var(--muted);
+    font-size: 20px;
     line-height: 1;
-    padding: 0 2px;
-    touch-action: none;
+    padding: 8px 6px;            /* a real target for a fingertip */
+    touch-action: none;          /* the grip drags the panel; it never scrolls the page */
   }
   .scroller.dragging .grip { cursor: grabbing; }
   .scroller .play {
     border: none;
     background: var(--accent-dark);
-    color: #fff;
+    color: var(--on-accent);
     width: 42px;
     height: 42px;
     border-radius: 12px;
@@ -449,49 +661,71 @@
     justify-content: center;
   }
   .scroller .play.on { background: var(--accent); }
-  .scroller .speed-wrap { display: flex; flex-direction: column; align-items: center; }
-  .scroller .speed-row { display: flex; align-items: center; gap: 5px; }
-  .scroller .stepper {
-    border: 1px solid var(--line);
-    background: #fff;
-    color: var(--ink);
-    width: 36px;
-    height: 40px;
-    border-radius: 10px;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
-    flex: none;
+  .scroller .speed-wrap {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
   }
-  .scroller .stepper:hover { background: var(--accent-soft); }
-  .scroller .stepper:active { background: var(--accent); color: #fff; }
+
+  /* A range input, styled by hand so the track and thumb match the rest of the page.
+     The thumb is deliberately big: it's dragged with a thumb, on a moving stage. */
   .scroller .speed {
-    width: 48px;
-    text-align: center;
-    font-family: var(--font);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 6px 4px;
-    font-variant-numeric: tabular-nums;
-    -moz-appearance: textfield;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 132px;
+    height: 30px;                 /* the grabbable strip, not the visible track */
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    touch-action: none;           /* dragging the slider must not scroll the page */
   }
-  .scroller .speed:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .scroller .speed::-webkit-outer-spin-button,
-  .scroller .speed::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .scroller .speed::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(var(--accent), var(--accent)) 0 / var(--fill, 30%) 100% no-repeat, var(--line);
+  }
+  .scroller .speed::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--line);
+  }
+  .scroller .speed::-moz-range-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+  .scroller .speed::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -9px;             /* centre the thumb on the 8px track */
+    border-radius: 50%;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    box-shadow: 0 2px 6px rgba(10, 27, 42, .25);
+  }
+  .scroller .speed::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    box-shadow: 0 2px 6px rgba(10, 27, 42, .25);
+  }
+  .scroller .speed:active::-webkit-slider-thumb { background: var(--accent-soft); }
+  .scroller .speed:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 999px; }
   .scroller .lbl {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: .1em;
     color: var(--muted);
-    margin-top: 4px;
+    text-align: center;
   }
+  .scroller .lbl b { color: var(--ink); font-variant-numeric: tabular-nums; }
 
   /* ---------- Profile modal ---------- */
   .modal {
@@ -580,32 +814,90 @@
 
   /* ---------- Mobile / phone ---------- */
   @media (max-width: 680px) {
-    .wrap { padding: 32px 16px 90px; }
+    .wrap { padding: 60px 14px 96px; }
     .toolbar { top: 10px; right: 10px; }
-    .btn { padding: 6px 11px; font-size: 12px; border-radius: 9px; }
-    .datebar { margin-bottom: 30px; flex-wrap: wrap; }
+    .btn { padding: 8px 12px; font-size: 13px; border-radius: 9px; min-height: 40px; }
+    .eyebrow { font-size: 11px; margin-bottom: 16px; }
+    .datebar { margin-bottom: 30px; }
+    /* Full-width picker: the easiest thing on the page to hit. */
+    .datebar select { min-width: 100%; min-height: 58px; }
     /* 2 per row on phones, whatever the lineup size */
-    .members { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .members { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 44px; }
     .members .member { grid-column: auto !important; }
+    .member { padding: 14px 10px 16px; }
     .photo { width: 78px; height: 78px; }
-    .toc { padding: 18px 16px; }
+    .toc { padding: 14px 12px; margin-bottom: 44px; }
     .toc ol { grid-template-columns: 1fr; }
+    /* Wrap instead of squeezing the title to nothing on a narrow screen. */
+    .toc a { flex-wrap: wrap; gap: 4px 10px; padding: 12px 8px; }
+    .toc-title { flex: 1 1 auto; min-width: 0; }
     .section-title { margin-bottom: 14px; }
-    .song-head { padding: 16px; gap: 12px; }
-    .song-title { font-size: 20px; }
+    .song-head { padding: 14px; gap: 10px; }
+    .song-title { font-size: 19px; }
     .song-meta { margin-left: 0; width: 100%; }
-    .chords-label { padding: 16px 16px 0; }
-    .chords { font-size: 12.5px; padding: 12px 16px 22px; }
+    .key-chip { min-height: 44px; padding: 8px 14px 8px 16px; font-size: 14px; }
+    .singer-chip { min-height: 44px; }
+    .chords-label { padding: 16px 14px 0; }
+    .chords { font-size: var(--chords-size-phone); padding: 12px 14px 22px; }
+    .key-menu { width: min(300px, calc(100vw - 20px)); padding: 10px; }
+    .key-grid { grid-template-columns: repeat(3, 1fr); }
+    .key-option { padding: 13px 0; font-size: 16px; }
     .modal-card { padding: 34px 22px 28px; }
-    .scroller { right: 10px; bottom: 10px; }
+    /* Sit above the home-bar area on a modern phone. */
+    .scroller {
+      right: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      padding: 8px 10px;
+      gap: 8px;
+    }
+    .scroller .play { width: 46px; height: 46px; }
+    .scroller .speed { width: 110px; height: 44px; }
+    .scroller .speed::-webkit-slider-thumb { margin-top: -16px; }
+  }
+
+  /* Very narrow phones: let the scroller span the screen rather than crowd itself. */
+  @media (max-width: 380px) {
+    .scroller {
+      left: 10px;
+      right: 10px;
+      justify-content: space-between;
+    }
+    .scroller .speed { width: 100%; }
+    .scroller .speed-wrap { flex: 1; }
+  }
+
+  /* A finger is not a mouse: hover styling that sticks after a tap looks broken. */
+  @media (hover: none) {
+    .key-chip:hover { border-color: var(--line); background: var(--chip-bg); }
+    .key-option:hover { background: var(--panel); border-color: var(--line); }
+    .datebar select:hover { border-color: var(--line); background-color: var(--panel); }
+    .toc a:hover { background: transparent; }
+    .sync-status:hover { background: transparent; color: var(--muted); }
   }
 
   @media print {
-    :root { --shadow: none; }
+    /* Paper is white whatever the room was: never print the dark palette. */
+    :root, :root[data-theme="dark"] {
+      --shadow: none;
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --ink: #0a1b2a;
+      --muted: #5b7186;
+      --line: #e6ecf2;
+      --accent: #4da2ff;
+      --accent-dark: #011829;
+      --accent-soft: #eaf4ff;
+      --chip-bg: #f2f6fa;
+      --chords-ink: #142a3d;
+      --on-accent: #ffffff;
+    }
+    :root[data-theme="dark"] h1.band-name { background: none; }
     /* Force photos and colored chips to actually print (no "Background graphics" checkbox needed) */
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     body { background: #fff; }
     .toolbar { display: none !important; }
+    /* Print the chords at a sane size, not whatever A+ was left on. */
+    .chords { font-size: 12.5px !important; white-space: pre-wrap; overflow: visible; }
     .datebar { display: none !important; }
     .scroller { display: none !important; }
     .modal { display: none !important; }
@@ -618,14 +910,19 @@
     .member, .toc, .song { break-inside: avoid; box-shadow: none; }
     .song { break-inside: avoid-page; }
     a { color: inherit; text-decoration: none; }
-    .link-btn { display: none !important; }
-    [contenteditable]:focus { outline: none; }
+    .key-menu { display: none !important; }
+    .key-chip .caret { display: none !important; }
   }
 </style>
 </head>
 <body>
 
 <div class="toolbar">
+  <div class="text-size" role="group" aria-label="Chord text size">
+    <button class="btn icon" id="textSmaller" aria-label="Smaller chords" title="Smaller chords">A−</button>
+    <button class="btn icon" id="textBigger" aria-label="Bigger chords" title="Bigger chords">A+</button>
+  </div>
+  <button class="btn icon" id="themeToggle" aria-pressed="false" title="Stage mode (dark)" aria-label="Toggle dark stage mode">🌙</button>
   <button class="btn primary" onclick="window.print()">Export to PDF</button>
 </div>
 
@@ -635,37 +932,54 @@
   <div class="datebar">
     <label for="setPicker">Set list</label>
     <select id="setPicker"></select>
+    <span class="sync-status" id="syncStatus"></span>
   </div>
 
   <!-- HERO -->
   <header class="hero">
     <div class="title-wrap">
-      <h1 class="band-name" contenteditable="true" data-save="band-name">Our Band Name</h1>
+      <h1 class="band-name" data-save="band-name">Our Band Name</h1>
     </div>
-    <div class="date" contenteditable="true" data-save="date">Friday · July 2, 2026</div>
+    <div class="date" data-save="date">Friday · July 2, 2026</div>
   </header>
 
   <!-- MEMBERS -->
   <p class="section-title">The Band</p>
   <div class="members" id="members"></div>
 
+  <!-- Shown instead of the set when the Google Doc has nothing for us -->
+  <p class="empty-state" id="emptyState" hidden></p>
+
   <!-- TABLE OF CONTENTS -->
-  <p class="section-title">Setlist · Table of Contents</p>
-  <nav class="toc">
-    <ol id="toc"></ol>
-    <p class="toc-subhead">Extra Songs</p>
-    <ol id="toc-extra"></ol>
-  </nav>
+  <div id="tocSection">
+    <p class="section-title">Setlist · Table of Contents</p>
+    <nav class="toc">
+      <ol id="toc"></ol>
+      <p class="toc-subhead" id="tocExtraHeading">Extra Songs</p>
+      <ol id="toc-extra"></ol>
+    </nav>
+  </div>
 
   <!-- SONGS -->
-  <p class="section-title">Songs</p>
-  <div class="songs" id="songs"></div>
+  <div id="songsSection">
+    <p class="section-title">Songs</p>
+    <div class="songs" id="songs"></div>
 
-  <!-- EXTRA SONGS -->
-  <p class="section-title">Extra Songs</p>
-  <div class="songs" id="extra-songs"></div>
+    <!-- EXTRA SONGS -->
+    <p class="section-title" id="extraHeading">Extra Songs</p>
+    <div class="songs" id="extra-songs"></div>
+  </div>
 
-  <p class="footnote">Click any text to edit it · Click a photo circle to add a picture · Click 🔗 to set a song link · then “Export to PDF”.</p>
+  <p class="footnote" id="footnote">Tap a song’s <strong>Key</strong> to transpose its chords · tap a photo for a closer look · <strong>Export to PDF</strong> to print or save.</p>
+</div>
+
+<!-- Transpose menu: shared by every song, positioned under the key chip you tap -->
+<div class="key-menu" id="keyMenu" role="listbox" aria-label="Transpose to a key">
+  <div class="key-menu-head">Transpose to</div>
+  <div class="key-grid" id="keyGrid"></div>
+  <div class="key-menu-foot">
+    <button type="button" class="key-reset" id="keyReset">Original</button>
+  </div>
 </div>
 
 <!-- Profile modal: bigger view of a band member -->
@@ -681,7 +995,7 @@
 <script>
   /* ---------------- Data ---------------- */
   /* The lineup a set falls back to when its own roster is missing. Each set in
-     PROJECT_SETS may carry a `roster` of { name, role, icon, photo } instead. */
+     set from the doc carries a `roster` of { name, role, icon, photo } instead. */
   const DEFAULT_ROSTER = [
     { name: "Joanne",  role: "Keyboard / Vox",        icon: "🎹" },
     { name: "Sam",     role: "Acoustic Guitar / Vox", icon: "🎸" },
@@ -696,7 +1010,9 @@
 
   const SONG_COUNT = 7;
   const EXTRA_COUNT = 3;
-  const TOTAL_SONGS = SONG_COUNT + EXTRA_COUNT;
+  let songCount = SONG_COUNT;      // a set from the Google Doc brings its own counts
+  let extraCount = EXTRA_COUNT;
+  const totalSongs = () => songCount + extraCount;
 
   /* ---------------- Members ---------------- */
   const membersEl = document.getElementById("members");
@@ -706,16 +1022,22 @@
     return /^url\(/i.test(photo) ? photo : `url('${photo}')`;
   }
 
+  /* A roster only has to name people: their picture is found in images/ by name. */
+  const PHOTO_BY_NAME = new Map(Object.entries(PHOTOS).map(([name, path]) => [name.toLowerCase(), path]));
+  function photoFor(member) {
+    return member.photo || PHOTO_BY_NAME.get(String(member.name || "").trim().toLowerCase()) || "";
+  }
+
   function memberCard(member, idx) {
-    const photo = member.photo || PHOTOS[member.name] || "";
+    const photo = photoFor(member);
     const background = photo ? ` style="background-image:${cssUrl(photo)}"` : "";
-    const hint = photo ? "" : '<span class="hint">Add photo</span>';
+    const hint = photo ? "" : `<span class="hint">${member.name || ""}</span>`;
     const card = document.createElement("div");
     card.className = "member";
     card.innerHTML = `
-      <div class="photo" data-idx="${idx}" title="Click to view profile"${background}>${hint}</div>
-      <div class="name" contenteditable="true" data-save="m-name-${idx}">${member.name}</div>
-      <div class="role"><span class="icon">${member.icon}</span><span contenteditable="true" data-save="m-role-${idx}">${member.role}</span></div>
+      <div class="photo" data-idx="${idx}" title="Click to view ${member.name}"${background}>${hint}</div>
+      <div class="name" data-save="m-name-${idx}">${member.name}</div>
+      <div class="role"><span class="icon">${member.icon}</span><span data-save="m-role-${idx}">${member.role}</span></div>
     `;
     return card;
   }
@@ -756,17 +1078,21 @@
       <div class="song-head">
         <div class="song-num">${pad(displayNum)}</div>
         <div class="song-title-link">
-          <a class="song-title" href="#" target="_blank" rel="noopener" data-title="${i}" data-save="song-title-${i}" contenteditable="true"
-             onclick="if(this.getAttribute('href')==='#'){return false;}">Song Title ${i}</a>
-          <button class="link-btn" title="Set link" onclick="setLink(${i})">🔗</button>
+          <span class="song-title" data-title="${i}" data-save="song-title-${i}">Song Title ${i}</span>
         </div>
         <div class="song-meta">
-          <span class="chip"><span class="label">Key</span><span class="val" contenteditable="true" data-keyval="${i}" data-save="song-key-${i}">C</span></span>
-          <span class="chip"><span class="label">Singer</span><span class="val" contenteditable="true" data-save="song-singer-${i}">Name</span></span>
+          <button type="button" class="chip key-chip" data-keychip="${i}"
+                  aria-haspopup="listbox" aria-expanded="false" title="Tap to transpose">
+            <span class="label">Key</span>
+            <span class="val" data-keyval="${i}" data-save="song-key-${i}">C</span>
+            <span class="shift" data-keyshift="${i}"></span>
+            <span class="caret" aria-hidden="true">▾</span>
+          </button>
+          <span class="chip singer-chip"><span class="label">Singer</span><span class="val" data-save="song-singer-${i}">Name</span></span>
         </div>
       </div>
       <div class="chords-label">Chords / Lyrics</div>
-      <div class="chords" contenteditable="true" data-save="song-chords-${i}"></div>
+      <div class="chords" data-save="song-chords-${i}"></div>
     `;
     songsContainer.appendChild(song);
   }
@@ -774,9 +1100,21 @@
   for (let i = 1; i <= SONG_COUNT; i++) buildSong(i, i, songsEl, tocEl);
   for (let k = 1; k <= EXTRA_COUNT; k++) buildSong(SONG_COUNT + k, k, extraSongsEl, extraTocEl);
 
+  /* Rebuilt per set, because a set list is however many songs it is. */
+  function renderSongSlots(main, extra) {
+    songCount = Number.isFinite(main) ? main : SONG_COUNT;
+    extraCount = Number.isFinite(extra) ? extra : EXTRA_COUNT;
+    [songsEl, tocEl, extraSongsEl, extraTocEl].forEach((container) => container.replaceChildren());
+    for (let i = 1; i <= songCount; i++) buildSong(i, i, songsEl, tocEl);
+    for (let k = 1; k <= extraCount; k++) buildSong(songCount + k, k, extraSongsEl, extraTocEl);
+    const extraDisplay = extraCount ? "" : "none";
+    document.getElementById("extraHeading").style.display = extraDisplay;
+    document.getElementById("tocExtraHeading").style.display = extraDisplay;
+  }
+
   /* ---------------- Sync TOC with song titles, key, singer ---------------- */
   function syncToc() {
-    for (let i = 1; i <= TOTAL_SONGS; i++) {
+    for (let i = 1; i <= totalSongs(); i++) {
       const title = document.querySelector(`[data-title="${i}"]`).textContent.trim();
       const key = document.querySelector(`[data-keyval="${i}"]`).textContent.trim();
       const singer = document.querySelector(`[data-save="song-singer-${i}"]`).textContent.trim();
@@ -785,8 +1123,524 @@
       document.querySelector(`[data-singer="${i}"]`).textContent = singer && singer !== "Name" ? singer : "";
     }
   }
-  document.addEventListener("input", syncToc);
   syncToc();
+
+  /* ---------------- Set list document format (no DOM: tabs in, sets out) ---------------- */
+  /* One Google Doc tab per set. Headings mark the sections and the songs; anything
+     under a song heading that isn't a Key / Singer / Link line is its chords, kept
+     exactly as typed. See SETLIST_DOC.md for the format people actually write. */
+  const SETLIST_DOC = (function () {
+    const TEAM = "team", MAIN = "songs", EXTRA = "extra", LINKS = "links";
+    const SECTIONS = [
+      { section: TEAM,  pattern: /^(?:the\s+)?(?:team|band|line[\s-]?up|roster|members)$/i },
+      { section: EXTRA, pattern: /^extras?(?:\s+songs?)?$/i },
+      { section: LINKS, pattern: /^(?:links?|videos?|youtube|recordings?|references?)$/i },
+      { section: MAIN,  pattern: /^(?:songs?|set\s*list)$/i },
+    ];
+    const HEADING = /^(#{1,6})\s*(.+)$/;
+    const SONG_PREFIX = /^song\s*:\s*(.+)$/i;
+    /* A song title is a Heading 2 or deeper; the one big heading at the top of a tab
+       is the set's own title, not a song called "August 2". */
+    const SONG_LEVEL = 2;
+    const FIELD = /^([A-Za-z][A-Za-z ]{0,14}?)\s*:\s*(.*)$/;
+    /* "Title — Key: A — Singer: Ana" splits on a dash or pipe with spaces around it,
+       so hyphenated song titles and "Keyboard / Vox" roles survive. */
+    const SEPARATOR = /\s+[—–|]\s+|\s+-\s+/;
+    const NUMBERING = /^\d+\s*[.)]\s+/;
+    const SONG_FIELD = /^(?:key|singer|link|chords?|lyrics)$/i;
+    const CHORDS_FIELD = /^(?:chords?|lyrics)$/i;
+    const SET_ID_FIELD = /^(?:set|id|slug)$/i;
+    const DATE_ID = /^(\d{4}-\d{2}-\d{2})/;
+    const PATH_LIKE = /^[^\s]*[./][^\s]*$/;
+    const ROLE_ICONS = [
+      [/keys?|keyboard|piano/i, "🎹"],
+      [/bass|guitar/i, "🎸"],
+      [/drum|percussion/i, "🥁"],
+      [/violin|cello|strings?/i, "🎻"],
+      [/sound|audio|tech|mix/i, "🎛️"],
+      [/vox|vocal|sing|lead/i, "🎤"],
+    ];
+    const DEFAULT_ICON = "🎵";
+
+    /* Google Docs hands back soft line breaks as \v and padding as non-breaking
+       spaces; chord alignment depends on both being ordinary characters. */
+    function normalize(text) {
+      return String(text == null ? "" : text)
+        .replace(/\r\n?/g, "\n")
+        .replace(/\u000b/g, "\n")
+        .replace(/\u00a0/g, " ");
+    }
+
+    function sectionOf(text) {
+      const found = SECTIONS.find((candidate) => candidate.pattern.test(text.trim()));
+      return found ? found.section : "";
+    }
+
+    /* A heading whether it was typed as "## Songs" or styled as a real Doc heading
+       (the Apps Script re-adds the markers), or written as "Song: Title". */
+    function headingOf(line) {
+      const trimmed = line.trim();
+      const marked = HEADING.exec(trimmed);
+      if (marked) return { level: marked[1].length, text: marked[2].trim() };
+      const named = SONG_PREFIX.exec(trimmed);
+      if (named) return { level: SONG_LEVEL, text: named[1].trim() };
+      return sectionOf(trimmed) ? { level: SONG_LEVEL, text: trimmed } : null;
+    }
+
+    function iconFor(role) {
+      const found = ROLE_ICONS.find(([pattern]) => pattern.test(role));
+      return found ? found[1] : DEFAULT_ICON;
+    }
+
+    /* "Sarah — Keyboard / Vox — 🎹 — images/sarah.jpg", all but the name optional.
+       With no photo given, the page finds one in images/ by name. */
+    function memberFrom(line) {
+      const [name, role = "", third = "", fourth = ""] = line.trim().split(SEPARATOR).map((part) => part.trim());
+      if (!name) return null;
+      const photoOnly = third && !fourth && PATH_LIKE.test(third);
+      return {
+        name,
+        role,
+        icon: photoOnly || !third ? iconFor(role) : third,
+        photo: photoOnly ? third : fourth,
+      };
+    }
+
+    function blankSong(title) {
+      return { title, key: "", singer: "", link: "", chords: [], inHeader: true };
+    }
+
+    function setSongField(song, name, value) {
+      const field = name.trim().toLowerCase();
+      if (field === "key") song.key = value.trim();
+      else if (field === "singer") song.singer = value.trim();
+      else if (field === "link") song.link = value.trim();
+      else return false;
+      return true;
+    }
+
+    function songFrom(headingText) {
+      const parts = headingText.split(SEPARATOR);
+      const song = blankSong(parts.shift().replace(NUMBERING, "").trim());
+      parts.forEach((part) => {
+        const field = FIELD.exec(part.trim());
+        if (field) setSongField(song, field[1], field[2]);
+      });
+      return song;
+    }
+
+    /* A line from the Links section: "Christ in Me — https://youtu.be/…", or the same
+       with a colon, or a bare URL on the line after the title. */
+    function linkFrom(line) {
+      const trimmed = line.trim();
+      const url = /(https?:\/\/\S+)\s*$/.exec(trimmed);
+      if (!url) return null;
+      const title = trimmed.slice(0, url.index).replace(NUMBERING, "").replace(/[\s—–|:-]+$/, "").trim();
+      return { title, url: url[1] };
+    }
+
+    /* Titles match loosely, so "Christ In Me!" in the Links section finds "Christ in Me". */
+    function titleKey(title) {
+      return String(title || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    }
+
+    function chordsOf(song) {
+      const lines = song.chords.slice();
+      while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      return lines.join("\n");
+    }
+
+    function idFrom(tabTitle, position) {
+      const title = String(tabTitle == null ? "" : tabTitle).trim();
+      const dated = DATE_ID.exec(title);
+      if (dated) return dated[1];
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return slug || "set-" + (position + 1);
+    }
+
+    /* One tab -> one set in the same shape as the files in sets/, or null for a tab
+       that holds no songs (notes, a template, a scratch tab). */
+    function parseTab(tab, position) {
+      const songs = { [MAIN]: [], [EXTRA]: [] };
+      const roster = [];
+      const linkList = [];         // { title, url } from the Links section
+      const meta = { id: "", title: "", date: "" };
+      let section = MAIN;          // songs written before any heading still count
+      let song = null;
+      let linkTitle = "";          // a Links line may name the song on the line above
+
+      normalize(tab && tab.text).split("\n").forEach((line) => {
+        const heading = headingOf(line);
+        if (heading) {
+          const named = sectionOf(heading.text);
+          if (named) { section = named; song = null; linkTitle = ""; return; }
+          if (section === LINKS) { linkTitle = heading.text; return; }
+          if (heading.level < SONG_LEVEL) {          // the tab's own title
+            if (!meta.title) meta.title = heading.text;
+            song = null;
+            return;
+          }
+          song = songFrom(heading.text);
+          songs[section === EXTRA ? EXTRA : MAIN].push(song);
+          return;
+        }
+
+        const trimmed = line.trim();
+        const field = FIELD.exec(trimmed);
+
+        if (section === LINKS) {
+          const link = linkFrom(line);
+          if (link) linkList.push({ title: link.title || linkTitle, url: link.url });
+          else if (trimmed) linkTitle = trimmed.replace(NUMBERING, "").trim();
+          return;
+        }
+
+        if (song) {
+          if (song.inHeader && field && SONG_FIELD.test(field[1].trim())) {
+            if (CHORDS_FIELD.test(field[1].trim())) {
+              song.inHeader = false;
+              if (field[2].trim()) song.chords.push(field[2]);
+            } else setSongField(song, field[1], field[2]);
+            return;
+          }
+          if (!song.chords.length && !trimmed) return;     // blank lines before the chords
+          song.inHeader = false;
+          song.chords.push(line);
+          return;
+        }
+
+        if (section === TEAM && trimmed && !field) {
+          const member = memberFrom(line);
+          if (member) roster.push(member);
+          return;
+        }
+
+        if (!field) return;
+        const name = field[1].trim().toLowerCase();
+        if (SET_ID_FIELD.test(name)) meta.id = field[2].trim();
+        else if (name === "title" || name === "band") meta.title = field[2].trim();
+        else if (name === "date" || name === "when") meta.date = field[2].trim();
+      });
+
+      const main = songs[MAIN], extra = songs[EXTRA];
+      if (!main.length && !extra.length) return null;
+
+      const ordered = main.concat(extra);
+      /* Links section, matched to songs by title; a song's own Link: line still wins.
+         An unmatched title falls back to position, so a bare list of URLs in set order
+         works too. */
+      const byTitle = new Map(linkList.filter((link) => link.title).map((link) => [titleKey(link.title), link.url]));
+      const unmatched = linkList.filter((link) => !link.title).map((link) => link.url);
+      ordered.forEach((entry, index) => {
+        if (entry.link) return;
+        entry.link = byTitle.get(titleKey(entry.title)) || unmatched[index] || "";
+      });
+
+      const text = {};
+      const links = {};
+      if (meta.title) text["band-name"] = meta.title;
+      if (meta.date) text["date"] = meta.date;
+      ordered.forEach((entry, index) => {
+        const number = index + 1;
+        text[`song-title-${number}`] = entry.title;
+        text[`song-key-${number}`] = entry.key;
+        text[`song-singer-${number}`] = entry.singer;
+        text[`song-chords-${number}`] = chordsOf(entry);
+        if (entry.link) links[String(number)] = entry.link;
+      });
+
+      return {
+        id: meta.id || idFrom(tab && tab.title, position),
+        set: { text, links, roster, songCount: main.length, extraCount: extra.length },
+      };
+    }
+
+    /* Newest first when tabs are named by date. A tab that isn't date-named keeps its
+       place in document order, after the dated ones — one stray "Template" tab must not
+       cost every other set its ordering. */
+    function orderOf(ids) {
+      const dated = ids.filter((id) => DATE_ID.test(id)).sort().reverse();
+      return dated.concat(ids.filter((id) => !DATE_ID.test(id)));
+    }
+
+    function parse(tabs) {
+      const parsed = (Array.isArray(tabs) ? tabs : []).map(parseTab).filter(Boolean);
+      const sets = {};
+      parsed.forEach((entry) => {
+        let id = entry.id, copy = 2;
+        while (sets[id]) id = entry.id + "-" + copy++;    // two tabs, one name
+        sets[id] = entry.set;
+        entry.id = id;
+      });
+      const order = orderOf(parsed.map((entry) => entry.id));
+      return { sets, order, defaultId: order[0] || "" };
+    }
+
+    return { parse };
+  })();
+
+  /* ---------------- Music theory (no DOM: pure text in, text out) ---------------- */
+  const MUSIC = (function () {
+    const SEMITONES = 12;
+    const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const FLAT_NAMES  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+    /* What the key menu offers, indexed by pitch class — the spellings musicians read. */
+    const KEY_NAMES   = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+    const NATURAL_STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+    const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
+    const ACCIDENTAL = { "-1": "b", "0": "", "1": "#" };
+
+    /* "F#m7b5/A" -> root F#, quality m7b5, bass A */
+    const CHORD = /^([A-G][#b]?)((?:maj|min|dim|aug|sus|add|m|M|Δ|°|\+|-|b|#|\d|\(|\))*)(?:\/([A-G][#b]?))?$/;
+    /* Bar lines and repeat marks share a chord line without being chords. */
+    const DECORATION = /^(?:\|+|:\|+|\|+:|\(?x\d+\)?|[-–—→,.]+)$/i;
+    /* Performance notes — "(break)", "(build sound)" — ride along untransposed. */
+    const ANNOTATION = /^\([^()]*\)$/;
+    /* One piece = one parenthesised note, or one run of non-space characters. */
+    const PIECE = /\([^()]*\)|\S+/g;
+    const KEY = /^([A-G][#b]?)\s*(m|min|minor)?$/;
+
+    function pitchOf(note) {
+      const accidental = note.slice(1);
+      const shift = accidental === "#" ? 1 : accidental === "b" ? -1 : 0;
+      return (NATURAL_STEP[note[0].toUpperCase()] + shift + SEMITONES) % SEMITONES;
+    }
+
+    function letterOf(note) {
+      return LETTERS.indexOf(note[0].toUpperCase());
+    }
+
+    /* A chord, or null for anything that isn't one — that's how lyrics stay untouched. */
+    function parseChord(token) {
+      const wrapped = /^\((.+)\)$/.exec(token);
+      const parts = CHORD.exec(wrapped ? wrapped[1] : token);
+      if (!parts) return null;
+      return { root: parts[1], quality: parts[2], bass: parts[3] || "", wrapped: Boolean(wrapped) };
+    }
+
+    function parseKey(label) {
+      const parts = KEY.exec((label || "").trim());
+      return parts ? { root: parts[1], suffix: parts[2] ? "m" : "" } : null;
+    }
+
+    /* Fallback spelling, for the rare note a double accidental would be needed for:
+       flat keys get flat names, sharp keys sharp ones, and a minor key borrows the
+       spelling of its relative major (C minor reads Eb, so: flats). */
+    function namesFor(key) {
+      const major = key.suffix ? FLAT_NAMES[(pitchOf(key.root) + 3) % SEMITONES] : key.root;
+      return major.includes("b") || major === "F" ? FLAT_NAMES : SHARP_NAMES;
+    }
+
+    function distance(fromKey, toKey) {
+      return (pitchOf(toKey.root) - pitchOf(fromKey.root) + SEMITONES) % SEMITONES;
+    }
+
+    /* Musicians read a drop as "-2", not "up 10". */
+    function describeShift(semitones) {
+      const signed = semitones > 6 ? semitones - SEMITONES : semitones;
+      return signed > 0 ? "+" + signed : String(signed);
+    }
+
+    function renameNote(note, shift) {
+      const letter = LETTERS[(letterOf(note) + shift.letters) % LETTERS.length];
+      const pitch = (pitchOf(note) + shift.semitones) % SEMITONES;
+      /* Distance from that letter's natural pitch, folded into -6..5. */
+      const accidental = ((pitch - NATURAL_STEP[letter] + 18) % SEMITONES) - 6;
+      /* Double sharps and flats are correct but unreadable; name the pitch instead. */
+      return Math.abs(accidental) <= 1 ? letter + ACCIDENTAL[accidental] : shift.names[pitch];
+    }
+
+    function spellChord(chord, shift) {
+      const renamed = renameNote(chord.root, shift) + chord.quality +
+        (chord.bass ? "/" + renameNote(chord.bass, shift) : "");
+      return chord.wrapped ? "(" + renamed + ")" : renamed;
+    }
+
+    /* The pieces of a chord line — empty for lyric lines, [Verse] headings, and
+       asides like "(same as verse 1)", all of which must survive untouched. */
+    function chordPieces(line) {
+      const pieces = Array.from(line.matchAll(PIECE), (match) => ({
+        text: match[0],
+        column: match.index,
+        chord: parseChord(match[0]),
+      }));
+      const readable = pieces.every((piece) =>
+        piece.chord || ANNOTATION.test(piece.text) || DECORATION.test(piece.text));
+      return readable && pieces.some((piece) => piece.chord) ? pieces : [];
+    }
+
+    /* Rewrite the line at its original columns so chords stay over their syllables;
+       a longer name (F# for F) nudges the rest right by the least amount possible. */
+    function transposeLine(line, shift) {
+      const pieces = chordPieces(line);
+      if (!pieces.length) return line;
+      return pieces.reduce((out, piece) => {
+        const column = Math.max(piece.column, out ? out.length + 1 : 0);
+        return out.padEnd(column) + (piece.chord ? spellChord(piece.chord, shift) : piece.text);
+      }, "");
+    }
+
+    function transposeSheet(text, shift) {
+      return text.split("\n").map((line) => transposeLine(line, shift)).join("\n");
+    }
+
+    /* Fallback origin for a song whose key chip is blank. */
+    function firstChordRoot(text) {
+      for (const line of text.split("\n")) {
+        const piece = chordPieces(line).find((candidate) => candidate.chord);
+        if (piece) return piece.chord.root;
+      }
+      return "";
+    }
+
+    function transposeTo(text, fromKey, toKey) {
+      const semitones = distance(fromKey, toKey);
+      if (!semitones) return text;                     // same pitch: leave the page as written
+      return transposeSheet(text, {
+        letters: (letterOf(toKey.root) - letterOf(fromKey.root) + LETTERS.length) % LETTERS.length,
+        semitones,
+        names: namesFor(toKey),
+      });
+    }
+
+    return { KEY_NAMES, pitchOf, parseKey, parseChord, distance, describeShift, transposeTo, firstChordRoot };
+  })();
+
+  /* ---------------- Transpose control: tap a song's key, pick another ---------------- */
+  /* Every transposition re-derives the chords from the song as written, so tapping
+     around never drifts and returning to the original key is always exact. */
+  const transposer = (function () {
+    const menu = document.getElementById("keyMenu");
+    const grid = document.getElementById("keyGrid");
+    const resetButton = document.getElementById("keyReset");
+
+    const chipOf = (i) => document.querySelector(`[data-keychip="${i}"]`);
+    const keyValOf = (i) => document.querySelector(`[data-keyval="${i}"]`);
+    const shiftOf = (i) => document.querySelector(`[data-keyshift="${i}"]`);
+    const chordsOf = (i) => document.querySelector(`[data-save="song-chords-${i}"]`);
+
+    const written = new Map();   // song number -> { key, label, chords } as written
+    const NONE = 0;             // no menu open
+    let openSong = NONE;
+
+    /* Captured the first time a song's menu opens — before anything is transposed. */
+    function writtenSong(i) {
+      let song = written.get(i);
+      if (!song) {
+        const label = keyValOf(i).textContent.trim();
+        const chords = chordsOf(i).innerText;
+        const key = MUSIC.parseKey(label) || MUSIC.parseKey(MUSIC.firstChordRoot(chords));
+        song = { key, label: MUSIC.parseKey(label) ? label : (key ? key.root + key.suffix : label), chords };
+        written.set(i, song);
+      }
+      return song;
+    }
+
+    function showKey(i, label, semitones) {
+      keyValOf(i).textContent = label;
+      shiftOf(i).textContent = semitones ? MUSIC.describeShift(semitones) : "";
+      chipOf(i).classList.toggle("transposed", semitones !== 0);
+      syncToc();
+    }
+
+    function transposeSong(i, toKey) {
+      const song = writtenSong(i);
+      if (!song.key || !toKey) return;
+      const semitones = MUSIC.distance(song.key, toKey);
+      chordsOf(i).textContent = MUSIC.transposeTo(song.chords, song.key, toKey);
+      showKey(i, semitones ? toKey.root + toKey.suffix : song.label, semitones);
+    }
+
+    /* The twelve keys, but spelled the way this song spells its own (A#, not Bb). */
+    function keyChoices(song) {
+      const origin = MUSIC.pitchOf(song.key.root);
+      return MUSIC.KEY_NAMES.map((name, pitch) => {
+        const label = (pitch === origin ? song.key.root : name) + song.key.suffix;
+        return { label, key: MUSIC.parseKey(label), isWritten: pitch === origin };
+      });
+    }
+
+    function optionButton(i, choice, currentLabel) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = choice.isWritten ? "key-option original" : "key-option";
+      button.textContent = choice.label;
+      button.setAttribute("role", "option");
+      button.setAttribute("aria-selected", String(choice.label === currentLabel));
+      button.title = choice.isWritten ? "The key these chords are written in" : "Transpose to " + choice.label;
+      button.addEventListener("click", () => { transposeSong(i, choice.key); closeMenu(); });
+      return button;
+    }
+
+    /* Fixed positioning keeps the menu out of the song card, which clips overflow. */
+    function placeMenu(i) {
+      const chip = chipOf(i).getBoundingClientRect();
+      const gap = 8;
+      const left = Math.min(Math.max(gap, chip.right - menu.offsetWidth), window.innerWidth - menu.offsetWidth - gap);
+      const below = chip.bottom + gap;
+      const fitsBelow = below + menu.offsetHeight <= window.innerHeight - gap;
+      menu.style.left = left + "px";
+      menu.style.top = (fitsBelow ? below : Math.max(gap, chip.top - menu.offsetHeight - gap)) + "px";
+    }
+
+    function openMenu(i) {
+      const song = writtenSong(i);
+      if (!song.key) { alert("This song has no key. Add \"Key: G\" to it in the Google Doc."); return; }
+      const currentLabel = keyValOf(i).textContent.trim();
+      grid.replaceChildren(...keyChoices(song).map((choice) => optionButton(i, choice, currentLabel)));
+      resetButton.textContent = "Original: " + song.label;
+      menu.classList.add("open");
+      chipOf(i).setAttribute("aria-expanded", "true");
+      openSong = i;
+      placeMenu(i);
+    }
+
+    function closeMenu() {
+      if (openSong === NONE) return;
+      const chip = chipOf(openSong);
+      if (chip) chip.setAttribute("aria-expanded", "false");
+      menu.classList.remove("open");
+      openSong = NONE;
+    }
+
+    /* Back to the written key, dropping every transposition state for the new set. */
+    function reset() {
+      closeMenu();
+      written.clear();
+      for (let i = 1; i <= totalSongs(); i++) {
+        shiftOf(i).textContent = "";
+        chipOf(i).classList.remove("transposed");
+      }
+    }
+
+    resetButton.addEventListener("click", () => {
+      const i = openSong;
+      if (i !== NONE) { transposeSong(i, writtenSong(i).key); closeMenu(); }
+    });
+
+    document.addEventListener("click", (e) => {
+      const chip = e.target.closest(".key-chip");
+      if (chip) {
+        const i = Number(chip.dataset.keychip);
+        const wasOpen = openSong === i;
+        closeMenu();
+        if (!wasOpen) openMenu(i);
+        return;
+      }
+      if (!e.target.closest(".key-menu")) closeMenu();
+    });
+
+    /* Enter and Space are the button's own job now; Escape is ours. */
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMenu();
+    });
+
+    const reposition = () => { if (openSong !== NONE) placeMenu(openSong); };
+    window.addEventListener("scroll", reposition, { passive: true });
+    window.addEventListener("resize", reposition);
+
+    return { reset };
+  })();
 
   /* ---------------- State helpers (used by the set picker) ---------------- */
   /* Member names and roles come from the set's roster, never from `text`, so each
@@ -798,29 +1652,74 @@
     document.querySelectorAll("[data-save]").forEach((el) => {
       if (!MEMBER_FIELD.test(el.dataset.save)) s.text[el.dataset.save] = el.innerHTML;
     });
-    document.querySelectorAll("a.song-title[data-title]").forEach((a) => { s.links[a.dataset.title] = a.getAttribute("href"); });
     return s;
   }
 
+  /* Text arrives from the doc, so it goes in as text — never as markup. */
   function applyState(s) {
     if (!s) return;
     if (s.text) Object.entries(s.text).forEach(([k, v]) => {
       const el = document.querySelector(`[data-save="${k}"]`);
-      if (el) el.innerHTML = v;
+      if (el) el.textContent = v;
     });
     if (s.photos) Object.entries(s.photos).forEach(([k, v]) => {
       const el = document.querySelector(`.photo[data-idx="${k}"]`);
       if (el && v) { el.style.backgroundImage = cssUrl(v); const h = el.querySelector(".hint"); if (h) h.style.display = "none"; }
     });
-    if (s.links) Object.entries(s.links).forEach(([k, v]) => {
-      const a = document.querySelector(`a.song-title[data-title="${k}"]`);
-      if (a && v) { a.setAttribute("href", v); if (v !== "#") a.title = "Opens: " + v; }
-    });
+    applyLinks(s.links);
+    hideEmptyChips();
     syncToc();
   }
 
-  /* ---------------- Set list picker: choose a stored set to load ---------------- */
-  const SETS = window.PROJECT_SETS || {};   // { "<id>": savedState }, baked in at build time
+  /* A song title becomes a link only when the set gives it one — no link, no link. */
+  function applyLinks(links) {
+    for (let i = 1; i <= totalSongs(); i++) {
+      const title = document.querySelector(`[data-title="${i}"]`);
+      if (!title) continue;
+      const url = (links && links[String(i)] || "").trim();
+      const safe = /^https?:\/\//i.test(url) ? url : "";
+      title.classList.toggle("has-link", Boolean(safe));
+      if (safe) {
+        title.dataset.href = safe;
+        title.setAttribute("role", "link");
+        title.setAttribute("tabindex", "0");
+        title.title = "Opens: " + safe;
+      } else {
+        delete title.dataset.href;
+        title.removeAttribute("role");
+        title.removeAttribute("tabindex");
+        title.removeAttribute("title");
+      }
+    }
+  }
+
+  /* An empty Singer reads as a stray label; drop the whole chip instead. */
+  function hideEmptyChips() {
+    for (let i = 1; i <= totalSongs(); i++) {
+      const singer = document.querySelector(`[data-save="song-singer-${i}"]`);
+      if (!singer) continue;
+      const named = singer.textContent.trim();
+      const chip = singer.closest(".singer-chip");
+      if (chip) chip.style.display = named && named !== "Name" ? "" : "none";
+    }
+  }
+
+  /* Titles are spans, so opening the video is ours to do. */
+  document.addEventListener("click", (e) => {
+    const title = e.target.closest(".song-title.has-link");
+    if (title) window.open(title.dataset.href, "_blank", "noopener");
+  });
+  document.addEventListener("keydown", (e) => {
+    const title = e.target.closest && e.target.closest(".song-title.has-link");
+    if (title && e.key === "Enter") window.open(title.dataset.href, "_blank", "noopener");
+  });
+
+  /* ---------------- Set list picker: choose a set to load ---------------- */
+  /* Every set comes from the Google Doc. Nothing is baked into this page; the only
+     stand-in is the last good pull kept on this device, for when the doc is unreachable. */
+  let sets = {};
+  let setOrder = [];
+  let defaultSetId = "";
   const BLANK_SET = collectState();          // pristine song fields to reset to between sets
   const picker = document.getElementById("setPicker");
 
@@ -829,34 +1728,257 @@
     return t["date"] || t["band-name"] || "Set list";
   }
 
+  function rosterFor(set) {
+    const roster = set && set.roster;
+    return roster && roster.length ? roster : DEFAULT_ROSTER;
+  }
+
   function loadSet(key) {
-    const set = SETS[key];
-    renderRoster((set && set.roster) || DEFAULT_ROSTER);
+    const set = sets[key];
+    renderSongSlots(set && set.songCount, set && set.extraCount);
+    renderRoster(rosterFor(set));
     applyState(BLANK_SET);                  // reset first so nothing lingers from another set
     if (set) applyState(set);
+    transposer.reset();                     // this set's keys are the written ones again
   }
 
-  Object.keys(SETS).forEach((key) => {
-    const opt = document.createElement("option");
-    opt.value = key;
-    opt.textContent = labelForSet(SETS[key]);
-    picker.appendChild(opt);
-  });
-  picker.addEventListener("change", () => loadSet(picker.value));
-
-  const startKey = window.DEFAULT_DATE || Object.keys(SETS)[0] || "";
-  if (startKey) { picker.value = startKey; loadSet(startKey); }
-
-  /* ---------------- Set song link ---------------- */
-  function setLink(i) {
-    const a = document.querySelector(`[data-title="${i}"]`);
-    const current = a.getAttribute("href") === "#" ? "" : a.getAttribute("href");
-    const url = prompt("Paste the link for this song (YouTube, Spotify, chart, etc.):", current);
-    if (url === null) return;
-    if (url.trim() === "") { a.setAttribute("href", "#"); return; }
-    a.setAttribute("href", url.trim());
-    a.title = "Opens: " + url.trim();
+  function fillPicker() {
+    picker.replaceChildren(...setOrder.map((key) => {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = labelForSet(sets[key]);
+      return option;
+    }));
+    picker.disabled = !setOrder.length;
   }
+
+  /* With no sets there is nothing to lay out — one honest line beats ten blank cards. */
+  const emptyEl = document.getElementById("emptyState");
+  function showNoSets(message) {
+    emptyEl.textContent = message;
+    emptyEl.hidden = false;
+    document.getElementById("songsSection").hidden = true;
+    document.getElementById("tocSection").hidden = true;
+  }
+  function hideNoSets() {
+    emptyEl.hidden = true;
+    document.getElementById("songsSection").hidden = false;
+    document.getElementById("tocSection").hidden = false;
+  }
+
+  let pickedByHand = false;                  // until someone chooses, the newest set wins
+  picker.addEventListener("change", () => { pickedByHand = true; loadSet(picker.value); });
+
+  fillPicker();
+
+  /* ---------------- Live pull from the Google Doc ---------------- */
+  /* Config lives in config.js (window.SETLIST_DOC_URL); "?doc=<url>" overrides it for
+     one visit. The last good pull is kept in localStorage, so a flaky connection at
+     church still shows the newest set list somebody's phone managed to fetch. */
+  const DOC_CACHE_KEY = "setlist-doc-cache";
+  /* Apps Script sleeps between visits and can take a good while to wake up. */
+  const PULL_TIMEOUT_MS = 20000;
+  /* A blip is worth asking again about: cold starts, a phone moving from wifi to cell,
+     Google's occasional 503. Three more tries over ~10s, then we report it. */
+  const RETRY_DELAYS_MS = [800, 2500, 6000];
+  const REPULL_AFTER_MS = 60000;
+  const REFRESH_EVERY_MS = 300000;         // someone may edit the doc mid-practice
+  const statusEl = document.getElementById("syncStatus");
+  let lastPullAt = 0;
+
+  function docUrl() {
+    const override = new URLSearchParams(location.search).get("doc");
+    return (override || window.SETLIST_DOC_URL || "").trim();
+  }
+
+  function showStatus(message, tone) {
+    statusEl.textContent = message;
+    statusEl.className = "sync-status" + (tone ? " " + tone : "");
+  }
+
+  const clockTime = (at) => new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  function readCache(url) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOC_CACHE_KEY) || "null");
+      return saved && saved.url === url && saved.tabs ? saved : null;
+    } catch (error) { return null; }
+  }
+
+  function writeCache(url, tabs) {
+    try { localStorage.setItem(DOC_CACHE_KEY, JSON.stringify({ url, tabs, at: Date.now() })); } catch (error) { /* private mode */ }
+  }
+
+  /* The endpoint returns { tabs: [{ title, text }] }; a plain-text answer is one set. */
+  function tabsFrom(body) {
+    try {
+      const data = JSON.parse(body);
+      const tabs = Array.isArray(data) ? data : data && data.tabs;
+      if (tabs && tabs.length) return tabs;
+    } catch (error) { /* not JSON: fall through */ }
+    return [{ title: "", text: body }];
+  }
+
+  /* Apps Script answers a misconfigured deployment with a sign-in page, and a broken
+     script with an error page — both are HTML, and neither is a set list. */
+  function describeBody(body) {
+    return /^\s*</.test(body)
+      ? "the endpoint returned a web page, not JSON — is the deployment shared with “Anyone”?"
+      : "the endpoint returned no set lists — check the tab format against SETLIST_DOC.md";
+  }
+
+  function withTimeout(promise, ms, label) {
+    let timer;
+    const limit = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(label + " timed out after " + ms + "ms")), ms);
+    });
+    return Promise.race([promise, limit]).finally(() => clearTimeout(timer));
+  }
+
+  async function fetchTabs(url) {
+    /* The <head> already asked for this; use that answer rather than asking twice. */
+    const started = window.SETLIST_DOC_REQUEST;
+    if (started && started.url === url) {
+      window.SETLIST_DOC_REQUEST = null;                 // one-shot: later pulls are fresh
+      const body = await withTimeout(started.body, PULL_TIMEOUT_MS, "the Google Doc");
+      return { tabs: tabsFrom(body), body };
+    }
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), PULL_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { cache: "no-store", signal: abort.signal });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const body = await response.text();
+      return { tabs: tabsFrom(body), body };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /* Swap in the doc's sets, keeping the reader where they were — and leaving the songs
+     alone when the doc says the same thing it said last time (a transposed song
+     shouldn't snap back to its written key because a pull landed).
+
+     "Where they were" only counts once someone has actually chosen: until then the page
+     is showing a default, and the doc's newest set is a better default than the one
+     baked in months ago. */
+  function applyDoc(parsed) {
+    if (!parsed.order.length) return;        // nothing usable: keep what's on screen
+    const chosen = pickedByHand && sets[picker.value] ? picker.value : parsed.defaultId;
+    const changed = JSON.stringify(sets[chosen]) !== JSON.stringify(parsed.sets[chosen]);
+    sets = parsed.sets;
+    setOrder = parsed.order;
+    defaultSetId = parsed.defaultId;
+    const id = sets[chosen] ? chosen : defaultSetId;
+    const wasShowing = picker.value;
+    fillPicker();                            // labels, plus any set added or dropped
+    picker.value = id;
+    hideNoSets();
+    if (changed || id !== wasShowing) loadSet(id);
+  }
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  /* One attempt: fetch, parse, and insist on getting at least one set out of it. */
+  async function pullOnce(url) {
+    const { tabs, body } = await fetchTabs(url);
+    const parsed = SETLIST_DOC.parse(tabs);
+    if (!parsed.order.length) throw new Error(describeBody(body));
+    return { parsed, tabs };
+  }
+
+  let syncing = false;                     // one pull at a time; triggers can overlap
+
+  async function syncWithDoc(url) {
+    if (syncing) return;
+    syncing = true;
+    showStatus("Syncing with the Google Doc…", "working");
+    try {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const { parsed, tabs } = await pullOnce(url);
+          writeCache(url, tabs);
+          lastPullAt = Date.now();
+          applyDoc(parsed);
+          showStatus("Live from the Google Doc · " + clockTime(lastPullAt));
+          return;
+        } catch (error) {
+          /* A doc we reached but couldn't read won't read any better in two seconds. */
+          const worthRetrying = attempt < RETRY_DELAYS_MS.length && !/^the endpoint returned/.test(error.message || "");
+          if (!worthRetrying) throw error;
+          console.warn(`Set list sync attempt ${attempt + 1} failed (${error.message}); retrying…`);
+          showStatus("Syncing with the Google Doc… (retrying)", "working");
+          await wait(RETRY_DELAYS_MS[attempt]);
+        }
+      }
+    } catch (error) {
+      reportFailure(url, error);
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function reportFailure(url, error) {
+    const cached = readCache(url);
+    showStatus(cached
+      ? "Doc not loading · saved copy from " + clockTime(cached.at)
+      : "Doc not loading · tap to try again", "warn");
+    if (!setOrder.length) showNoSets("The set list couldn't be loaded from the Google Doc.");
+    /* The console is where you find out why — the status line has no room for it. */
+    console.warn("Set list sync failed:", error && error.message ? error.message : error);
+    console.warn("Endpoint:", url);
+    if (error && error.name === "TypeError") {
+      console.warn("A TypeError here is usually the browser blocking the request: open the " +
+        "endpoint in a tab to check it works, and make sure this page is served over http(s), not file://.");
+    }
+  }
+
+  (function startSync() {
+    const url = docUrl();
+    if (!url) {                              // the doc is the only source, so this is fatal
+      showStatus("No Google Doc configured", "warn");
+      showNoSets("No Google Doc is configured. Add its web-app URL to config.js — see SETLIST_DOC.md.");
+      return;
+    }
+    /* A page opened straight off the disk isn't allowed to fetch https, so say what to
+       do about it rather than blaming the doc. */
+    if (location.protocol === "file:") {
+      showStatus("Open this page over http:// to load the Google Doc", "warn");
+      showNoSets("This page is open from a file, and browsers won't let it fetch the Google Doc. " +
+        "Serve the folder over http:// instead — see SETLIST_DOC.md.");
+      console.warn("A file:// page can't fetch " + url + " — serve the folder instead, e.g. " +
+        "python3 -m http.server 8000 --directory <this folder>, then open http://localhost:8000/index.html");
+      return;
+    }
+    document.getElementById("footnote").innerHTML =
+      "The set list comes from the Google Doc · tap a song’s <strong>Key</strong> to transpose its chords · " +
+      "transposing is just for you and resets on refresh.";
+    const cached = readCache(url);
+    if (cached) applyDoc(SETLIST_DOC.parse(cached.tabs));
+    /* Nothing to offer yet on a first visit — say so instead of an empty picker. */
+    if (!setOrder.length) {
+      const waiting = document.createElement("option");
+      waiting.textContent = "Loading set lists…";
+      picker.replaceChildren(waiting);
+      showNoSets("Loading the set list from the Google Doc…");
+    }
+    syncWithDoc(url);
+
+    /* Every way back to a working doc, so a failed pull is never a dead end. */
+    const resync = () => syncWithDoc(url);
+    const resyncIfStale = () => { if (Date.now() - lastPullAt > REPULL_AFTER_MS) resync(); };
+
+    /* Coming back to an already-open page counts as a visit. */
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) resyncIfStale();
+    });
+    window.addEventListener("pageshow", (e) => { if (e.persisted) resyncIfStale(); });
+    window.addEventListener("focus", resyncIfStale);
+    window.addEventListener("online", resync);              // wifi came back
+    setInterval(resyncIfStale, REFRESH_EVERY_MS);           // doc edited while the page sits open
+    statusEl.addEventListener("click", resync);             // tap the status line to try now
+    statusEl.title = "Tap to sync with the Google Doc now";
+  })();
 
   /* ---------------- Profile modal: click a photo to view it bigger ---------------- */
   const modal = document.getElementById("profileModal");
@@ -886,17 +2008,13 @@
 </script>
 
 <!-- Auto-scroll controller: draggable, stays in the corner, wheel sets speed -->
-<div class="scroller" id="scroller" title="Set the speed, then press play · drag ⠿ to move">
-  <span class="grip" id="scrollerGrip" title="Drag to move">⠿</span>
+<div class="scroller" id="scroller">
+  <span class="grip" id="scrollerGrip" title="Drag to move" aria-hidden="true">⠿</span>
   <button class="play" id="scrollPlay" title="Start / stop auto-scroll" aria-label="Start or stop auto-scroll">▶</button>
   <div class="speed-wrap">
-    <div class="speed-row">
-      <button class="stepper" id="speedDown" aria-label="Slower">−</button>
-      <input class="speed" id="scrollSpeed" type="number" inputmode="numeric" min="1" max="300" step="1" value="6"
-             title="Speed (1 = super slow). Tap − / + or scroll the wheel to change." />
-      <button class="stepper" id="speedUp" aria-label="Faster">+</button>
-    </div>
-    <span class="lbl">speed</span>
+    <input class="speed" id="scrollSpeed" type="range" min="1" max="10" step="1" value="3"
+           aria-label="Scroll speed, 1 (slowest) to 10 (fastest)" />
+    <span class="lbl">speed <b id="speedValue">3</b></span>
   </div>
 </div>
 
@@ -907,19 +2025,30 @@
     const play   = document.getElementById("scrollPlay");
     const speed  = document.getElementById("scrollSpeed");
 
-    const MIN = 1, MAX = 300;               // pixels per second (1 = super slow)
+    const readout = document.getElementById("speedValue");
+
+    /* The dial reads 1-10; these are the pixels per second behind each notch. Slower at
+       the bottom where the useful reading speeds live, and spaced apart at the top. */
+    const SPEEDS = [8, 14, 22, 32, 45, 62, 85, 120, 170, 240];
+    const DEFAULT_NOTCH = 3;
     let running = false, rafId = null, lastTs = 0, pos = 0;
 
     // The scrolling element (bypassing scrollBy avoids CSS scroll-behavior: smooth,
     // which otherwise animates every step and cripples the speed on mobile).
     const scroller = document.scrollingElement || document.documentElement;
 
-    function clampSpeed() {
-      let v = parseFloat(speed.value);
-      if (isNaN(v)) v = MIN;
-      v = Math.max(MIN, Math.min(MAX, Math.round(v)));
-      speed.value = v;
-      return v;
+    function notch() {
+      const value = Math.round(parseFloat(speed.value));
+      return Number.isFinite(value) ? Math.max(1, Math.min(SPEEDS.length, value)) : DEFAULT_NOTCH;
+    }
+
+    function pixelsPerSecond() { return SPEEDS[notch() - 1]; }
+
+    /* The filled part of the track is drawn by CSS from --fill. */
+    function showSpeed() {
+      const value = notch();
+      readout.textContent = value;
+      speed.style.setProperty("--fill", ((value - 1) / (SPEEDS.length - 1)) * 100 + "%");
     }
 
     function maxScroll() {
@@ -931,11 +2060,33 @@
       if (!lastTs) lastTs = ts;
       const dt = (ts - lastTs) / 1000;
       lastTs = ts;
-      pos += clampSpeed() * dt;                 // float accumulator → smooth even at 1 px/s
+      pos += pixelsPerSecond() * dt;                 // float accumulator → smooth even at 1 px/s
       scroller.scrollTop = pos;                 // direct assignment = instant scroll (not smoothed)
       if (pos >= maxScroll()) { stop(); return; }
       rafId = requestAnimationFrame(frame);
     }
+
+    /* Keep the screen on — a phone that sleeps mid-song is the whole reason people give
+       up on reading charts off a phone. The API is missing on some browsers and rejects
+       when the tab is hidden, so every call is optional and failure is silent. */
+    let wakeLock = null;
+
+    async function holdScreenAwake() {
+      if (wakeLock || !("wakeLock" in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      } catch (error) {
+        wakeLock = null;                       // denied or unsupported: the page still works
+      }
+    }
+
+    /* Nobody opens a set list to watch it fall asleep, so the screen simply stays on
+       for as long as the page is in front of you — no button to find, or forget. */
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) holdScreenAwake();     // the OS drops the lock while hidden
+    });
+    holdScreenAwake();
 
     function start() {
       pos = scroller.scrollTop;
@@ -951,45 +2102,130 @@
     }
     play.addEventListener("click", () => (running ? stop() : start()));
 
-    // Mouse wheel over the number box adjusts speed instead of scrolling the page
+    speed.addEventListener("input", showSpeed);
+    // The wheel over the slider changes speed instead of scrolling the page past it.
     speed.addEventListener("wheel", (e) => {
       e.preventDefault();
-      speed.value = (parseFloat(speed.value) || MIN) + (e.deltaY < 0 ? 1 : -1);
-      clampSpeed();
+      speed.value = notch() + (e.deltaY < 0 ? 1 : -1);
+      showSpeed();
     }, { passive: false });
-    speed.addEventListener("change", clampSpeed);
+    showSpeed();
 
-    // + / − buttons (works great on touch screens)
-    function bump(delta) { speed.value = (parseFloat(speed.value) || MIN) + delta; clampSpeed(); }
-    document.getElementById("speedDown").addEventListener("click", () => bump(-1));
-    document.getElementById("speedUp").addEventListener("click", () => bump(1));
-
-    // Draggable — position:fixed keeps it pinned on screen wherever you scroll
+    /* Draggable — position:fixed keeps it pinned on screen wherever you scroll.
+       Pointer events cover mouse, touch and stylus with one code path, and capturing
+       the pointer means a fast drag can't slip off the grip and strand the panel. */
     let dragging = false, offX = 0, offY = 0;
-    function pt(e) { return e.touches ? e.touches[0] : e; }
-    function down(e) {
-      dragging = true; panel.classList.add("dragging");
-      const r = panel.getBoundingClientRect(), p = pt(e);
-      offX = p.clientX - r.left; offY = p.clientY - r.top;
-      panel.style.right = "auto"; panel.style.bottom = "auto";
-      panel.style.left = r.left + "px"; panel.style.top = r.top + "px";
-      e.preventDefault();
+
+    function clampToScreen(x, y) {
+      return [
+        Math.max(4, Math.min(window.innerWidth - panel.offsetWidth - 4, x)),
+        Math.max(4, Math.min(window.innerHeight - panel.offsetHeight - 4, y)),
+      ];
     }
-    function move(e) {
+
+    function placePanel(x, y) {
+      const [left, top] = clampToScreen(x, y);
+      panel.style.right = "auto";
+      panel.style.bottom = "auto";
+      panel.style.left = left + "px";
+      panel.style.top = top + "px";
+    }
+
+    grip.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      panel.classList.add("dragging");
+      const box = panel.getBoundingClientRect();
+      offX = e.clientX - box.left;
+      offY = e.clientY - box.top;
+      placePanel(box.left, box.top);
+      grip.setPointerCapture(e.pointerId);
+      e.preventDefault();                      // no text selection, no page scroll
+    });
+
+    grip.addEventListener("pointermove", (e) => {
       if (!dragging) return;
-      const p = pt(e);
-      let x = p.clientX - offX, y = p.clientY - offY;
-      x = Math.max(4, Math.min(window.innerWidth  - panel.offsetWidth  - 4, x));
-      y = Math.max(4, Math.min(window.innerHeight - panel.offsetHeight - 4, y));
-      panel.style.left = x + "px"; panel.style.top = y + "px";
+      placePanel(e.clientX - offX, e.clientY - offY);
+      e.preventDefault();
+    });
+
+    const endDrag = () => { dragging = false; panel.classList.remove("dragging"); };
+    grip.addEventListener("pointerup", endDrag);
+    grip.addEventListener("pointercancel", endDrag);
+
+    /* Rotating the phone can leave a dragged panel off-screen; pull it back. */
+    window.addEventListener("resize", () => {
+      if (panel.style.left) placePanel(parseFloat(panel.style.left), parseFloat(panel.style.top));
+    });
+  })();
+
+  /* ---------------- Stage mode: dark theme + chord size ---------------- */
+  /* Both are personal and local: the doc says what to play, this says how to read it. */
+  (function () {
+    const STORAGE_KEY = "setlist-display";
+    const CHORD_SIZES = [12, 14, 16, 19, 22, 26];        // desktop px, per step
+    const PHONE_SIZES = [11, 12.5, 14.5, 17, 20, 24];    // the same steps on a phone
+    const DEFAULT_STEP = 1;
+    const root = document.documentElement;
+    const themeButton = document.getElementById("themeToggle");
+    const saved = read();
+    let step = clampStep(saved.chordStep);
+
+    function read() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {}; }
+      catch (error) { return {}; }
     }
-    function up() { dragging = false; panel.classList.remove("dragging"); }
-    grip.addEventListener("mousedown", down);
-    grip.addEventListener("touchstart", down, { passive: false });
-    document.addEventListener("mousemove", move);
-    document.addEventListener("touchmove", move, { passive: false });
-    document.addEventListener("mouseup", up);
-    document.addEventListener("touchend", up);
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ dark: isDark(), chordStep: step }));
+      } catch (error) { /* private mode: this visit still works, it just won't be remembered */ }
+    }
+
+    const isDark = () => root.dataset.theme === "dark";
+    /* `+null` is 0, and 0 is a real step — so a missing preference must be caught
+       before the number coercion, or it silently means "smallest". */
+    function clampStep(value) {
+      const step = value === null || value === undefined || value === "" ? DEFAULT_STEP : Math.round(+value);
+      if (!Number.isFinite(step)) return DEFAULT_STEP;
+      return Math.max(0, Math.min(CHORD_SIZES.length - 1, step));
+    }
+
+    function showTheme() {
+      const dark = isDark();
+      themeButton.textContent = dark ? "☀️" : "🌙";
+      themeButton.setAttribute("aria-pressed", String(dark));
+      themeButton.title = dark ? "Daylight mode" : "Stage mode (dark)";
+    }
+
+    function showChordSize() {
+      root.style.setProperty("--chords-size", CHORD_SIZES[step] + "px");
+      root.style.setProperty("--chords-size-phone", PHONE_SIZES[step] + "px");
+      document.getElementById("textSmaller").disabled = step === 0;
+      document.getElementById("textBigger").disabled = step === CHORD_SIZES.length - 1;
+    }
+
+    function resize(by) { step = clampStep(step + by); showChordSize(); save(); }
+
+    themeButton.addEventListener("click", () => {
+      if (isDark()) delete root.dataset.theme; else root.dataset.theme = "dark";
+      showTheme();
+      save();
+    });
+    document.getElementById("textSmaller").addEventListener("click", () => resize(-1));
+    document.getElementById("textBigger").addEventListener("click", () => resize(1));
+
+    /* Follow the phone's own day/night switch until someone overrides it here. */
+    const system = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+    if (system && !("dark" in saved)) {
+      system.addEventListener("change", (e) => {
+        if ("dark" in read()) return;                    // they've since chosen for themselves
+        if (e.matches) root.dataset.theme = "dark"; else delete root.dataset.theme;
+        showTheme();
+      });
+    }
+
+    showTheme();
+    showChordSize();
   })();
 
   /* ---------------- Opening explosion ---------------- */
