@@ -25,7 +25,8 @@ TEMPLATE = os.path.join(HERE, "template.html")
 OUT_HTML = os.path.join(HERE, "index.html")
 IMAGES_DIR = os.path.join(HERE, "images")
 
-# Order MUST match the `DEFAULT_ROSTER` array inside template.html.
+# Names for the base64 photos baked into template.html, in the order they were added.
+# The page itself starts with an empty roster; these only decide the images/ filenames.
 DEFAULT_MEMBERS = [
     ("Joanne", "joanne"),
     ("Sam", "sam"),

@@ -195,6 +195,8 @@
     gap: 16px;
     margin-bottom: 64px;
   }
+  /* `display: grid` outranks the browser's [hidden] rule, so say it here. */
+  .members[hidden] { display: none; }
   /* 4 across by default; a 7-person lineup reads better as 3 then 4 */
   .member { grid-column: span 3; }
   .members[data-count="7"] .member:nth-child(-n + 3) { grid-column: span 4; }
@@ -944,7 +946,7 @@
   </header>
 
   <!-- MEMBERS -->
-  <p class="section-title">The Band</p>
+  <p class="section-title" id="bandTitle">The Band</p>
   <div class="members" id="members"></div>
 
   <!-- Shown instead of the set when the Google Doc has nothing for us -->
@@ -994,19 +996,12 @@
 
 <script>
   /* ---------------- Data ---------------- */
-  /* The lineup a set falls back to when its own roster is missing. Each set in
-     set from the doc carries a `roster` of { name, role, icon, photo } instead. */
-  const DEFAULT_ROSTER = [
-    { name: "Joanne",  role: "Keyboard / Vox",        icon: "🎹" },
-    { name: "Sam",     role: "Acoustic Guitar / Vox", icon: "🎸" },
-    { name: "Ana",     role: "Vox",                   icon: "🎤" },
-    { name: "Abraham", role: "Vox",                   icon: "🎤" },
-    { name: "Edwin",   role: "Bass Guitar",           icon: "🎸" },
-    { name: "Gabe",    role: "Drums",                 icon: "🥁" },
-    { name: "Andrew",  role: "Sound",                 icon: "🎛️" },
-  ];
+  /* The lineup a set falls back to when its own roster is missing: nobody. Every set
+     from the doc carries a `roster` of { name, role, icon, photo }, so an unnamed
+     lineup is a doc that hasn't said who is playing — not a lineup to guess at. */
+  const DEFAULT_ROSTER = [];
 
-  const PHOTOS = {"Joanne": "images/01-joanne.jpg", "Sam": "images/02-sam.jpg", "Ana": "images/03-ana.jpg", "Abraham": "images/04-abraham.jpg", "Edwin": "images/05-edwin.jpg", "Gabe": "images/06-gabe.jpg", "Andrew": "images/07-andrew.jpg", "Sarah": "images/08-sarah.jpg", "Haejin": "images/09-haejin.jpg", "Caleb": "images/10-caleb.jpg", "Lydia": "images/11-lydia.jpg", "Hannah": "images/12-hannah.jpg", "Jason": "images/13-jason.jpg"};
+  const PHOTOS = {"Joanne": "images/01-joanne.jpg", "Sam": "images/02-sam.jpg", "Ana": "images/03-ana.jpg", "Abraham": "images/04-abraham.jpg", "Edwin": "images/05-edwin.jpg", "Gabe": "images/06-gabe.jpg", "Andrew": "images/07-andrew.jpg", "Sarah": "images/08-sarah.jpg", "Haejin": "images/09-haejin.jpg", "Caleb": "images/10-caleb.jpg", "Lydia": "images/11-lydia.jpg", "Hannah": "images/12-hannah.jpg", "Jason": "images/13-jason.jpg", "Joey": "images/14-joey.jpg"};
 
   const SONG_COUNT = 7;
   const EXTRA_COUNT = 3;
@@ -1016,6 +1011,7 @@
 
   /* ---------------- Members ---------------- */
   const membersEl = document.getElementById("members");
+  const bandTitleEl = document.getElementById("bandTitle");
 
   /* Photos arrive as a bare path, a data URI, or already wrapped by an older save. */
   function cssUrl(photo) {
@@ -1042,10 +1038,13 @@
     return card;
   }
 
-  /* The roster is re-rendered per set, so lineups of different sizes can coexist. */
+  /* The roster is re-rendered per set, so lineups of different sizes can coexist.
+     An empty lineup hides the heading too: a title over no cards reads as a bug. */
   function renderRoster(roster) {
     membersEl.replaceChildren(...roster.map(memberCard));
     membersEl.dataset.count = roster.length;
+    bandTitleEl.hidden = !roster.length;
+    membersEl.hidden = !roster.length;
   }
 
   renderRoster(DEFAULT_ROSTER);
